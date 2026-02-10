@@ -1,285 +1,480 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ArrowDown } from 'lucide-react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { Painting, Exhibition } from '@/types/database'
-import { NewsletterForm } from '@/components/NewsletterForm'
-import { ShopCard } from '@/components/ShopCard'
-import { TimelineItem } from '@/components/TimelineItem'
+import Image from 'next/image'
+import { createClient } from '@/lib/supabase'
+import Footer from '@/components/Footer'
 
-async function getFeaturedPaintings(): Promise<Painting[]> {
-  if (!isSupabaseConfigured) return []
-  const { data } = await supabase
-    .from('paintings')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(6)
-  return data || []
+interface Painting {
+  id: string
+  title: string
+  image_url: string
+  price: number | null
+  original_price?: number | null
+  available: boolean
+  category?: string
 }
 
-async function getExhibitions(): Promise<Exhibition[]> {
-  if (!isSupabaseConfigured) return []
-  const { data } = await supabase
-    .from('exhibitions')
-    .select('*')
-    .order('start_date', { ascending: false })
-    .limit(4)
-  return data || []
+interface Exhibition {
+  id: string
+  title: string
+  location: string
+  date: string
+  year: number
+  month: string
 }
 
-export const revalidate = 60
+interface FooterLink {
+  label: string
+  href: string
+}
 
-export default async function HomePage() {
-  const [paintings, exhibitions] = await Promise.all([
-    getFeaturedPaintings(),
-    getExhibitions(),
-  ])
+interface Settings {
+  artist_name: string
+  artist_title: string
+  artist_bio: string
+  hero_image: string
+  contact_email: string
+  footer_description?: string
+  footer_address?: string
+  footer_phone?: string
+  footer_col1_title?: string
+  footer_col1_links?: FooterLink[]
+  footer_col2_title?: string
+  footer_col2_links?: FooterLink[]
+  footer_col3_title?: string
+  social_x?: string
+  social_instagram?: string
+  social_facebook?: string
+}
+
+export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [expoDropdown, setExpoDropdown] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [paintings, setPaintings] = useState<Painting[]>([])
+  const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
+  const [settings, setSettings] = useState<Settings | null>(null)
+  const [email, setEmail] = useState('')
+  
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function fetchData() {
+      const [paintingsRes, exhibitionsRes, settingsRes] = await Promise.all([
+        supabase.from('paintings').select('*').eq('available', true).order('created_at', { ascending: false }).limit(6),
+        supabase.from('exhibitions').select('*').order('year', { ascending: false }).limit(4),
+        supabase.from('settings').select('*').single()
+      ])
+      
+      if (paintingsRes.data) setPaintings(paintingsRes.data)
+      if (exhibitionsRes.data) setExhibitions(exhibitionsRes.data)
+      if (settingsRes.data) setSettings(settingsRes.data)
+    }
+    fetchData()
+
+    const handleScroll = () => setScrolled(window.scrollY > 100)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <>
-      {/* ============================================
-          HERO SECTION - Fullscreen with overlay
-      ============================================ */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <main className="min-h-screen">
+      
+      {/* Fixed Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-[#13130d] shadow-lg' : 'bg-[#13130d] md:bg-transparent'
+      }`}>
+        <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
+          {/* Left nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/" className="text-[#c9a050] text-sm tracking-wider font-medium">
+              MAISON
+            </Link>
+            
+            <Link href="/expositions" className={`text-sm tracking-wider transition-colors ${
+              scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
+            }`}>EXPOSITIONS</Link>
+
+            <Link href="/galerie" className={`text-sm tracking-wider transition-colors ${
+              scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
+            }`}>
+              COLLECTIONS
+            </Link>
+          </div>
+          
+          {/* Logo */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2">
+            <Image
+              src="/logo.png"
+              alt="J. Wattebled"
+              width={280}
+              height={80}
+              className={`h-14 md:h-16 w-auto object-contain transition-all ${
+                scrolled ? '' : 'md:brightness-0 md:invert'
+              }`}
+            />
+          </Link>
+          
+          {/* Right nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/boutique" className={`text-sm tracking-wider transition-colors ${
+              scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
+            }`}>
+              BOUTIQUE
+            </Link>
+            <Link href="/contact" className={`text-sm tracking-wider transition-colors ${
+              scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
+            }`}>
+              CONTACTS
+            </Link>
+          </div>
+
+          {/* Mobile menu button */}
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden ml-auto p-2 text-[#f7f6ec]"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-[#13130d] border-t border-white/10">
+            <div className="px-6 py-4 flex flex-col">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#c9a050]">MAISON</Link>
+              <Link href="/expositions" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">EXPOSITIONS</Link>
+              <Link href="/galerie" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">COLLECTIONS</Link>
+              <Link href="/boutique" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">BOUTIQUE</Link>
+              <Link href="/contact" onClick={() => setMenuOpen(false)} className="py-3 text-[#f7f6ec]">CONTACTS</Link>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section - Full Screen */}
+      <section className="relative h-screen flex items-center">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=2000')] bg-cover bg-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/40 via-[#0a0a0a]/30 to-[#0a0a0a]" />
+          <Image
+            src={settings?.hero_image || "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1920&q=80"}
+            alt="Hero"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 text-center px-6">
-          <p className="text-[#c9a86c] text-sm md:text-base uppercase tracking-[0.3em] mb-6 animate-fade-in">
-            Paysages et Scènes
-          </p>
-          
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-normal mb-8 animate-slide-up">
-            Marie Dupont
-          </h1>
-          
-          <p className="text-white/60 text-lg md:text-xl font-light max-w-xl mx-auto mb-12 animate-slide-up delay-200">
-            L'art de capturer la lumière et l'émotion à travers la peinture impressionniste
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in delay-300">
-            <Link href="/gallery" className="btn btn-primary">
-              Découvrir mes œuvres
-            </Link>
-            <Link href="/contact" className="btn btn-white">
-              Me contacter
-            </Link>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce">
-          <ArrowDown size={24} className="text-white/40" />
-        </div>
-      </section>
-
-      {/* ============================================
-          ABOUT SECTION - "I'm [Name] - [Profession]"
-      ============================================ */}
-      <section className="py-24 lg:py-32 bg-[#0a0a0a]">
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-            {/* Image */}
-            <div className="relative">
-              <div className="aspect-[4/5] relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=1000')] bg-cover bg-center" />
-                <div className="absolute inset-0 bg-[#0a0a0a]/20" />
-              </div>
-              {/* Decorative frame */}
-              <div className="absolute -bottom-6 -right-6 w-full h-full border border-[#c9a86c]/30 -z-10" />
-            </div>
-
-            {/* Content */}
-            <div>
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-[1.1] mb-8">
-                Je suis Marie Dupont
-                <span className="block text-[#c9a86c] mt-2">Peintre impressionniste</span>
-              </h2>
-              
-              <div className="w-16 h-px bg-[#c9a86c] mb-8" />
-              
-              <div className="space-y-6 text-[#888] font-light leading-relaxed">
-                <p>
-                  Ma nouvelle collection de peintures contient plus de 30 œuvres d'art 
-                  dans le style impressionniste et est actuellement exposée dans la 
-                  section moderne du musée.
-                </p>
-                <p>
-                  Chaque toile est une invitation à explorer les profondeurs de l'âme, 
-                  où les couleurs dansent avec les émotions et la lumière révèle 
-                  l'invisible.
-                </p>
-              </div>
-
-              <Link 
-                href="/contact" 
-                className="inline-flex items-center gap-3 mt-10 text-[#c9a86c] text-sm uppercase tracking-[0.15em] group"
-              >
-                En savoir plus
-                <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-2" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================
-          AWARDS/EXHIBITIONS TIMELINE
-      ============================================ */}
-      <section className="py-24 lg:py-32 bg-[#111]">
-        <div className="container mx-auto px-6 lg:px-12">
-          {/* Section Header */}
-          <div className="text-center mb-16 lg:mb-24">
-            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6">
-              Mes Distinctions
-            </h2>
-            <p className="text-[#888] font-light max-w-2xl mx-auto">
-              Certaines de mes peintures ont été récompensées par l'Académie des Arts 
-              et exposées dans le monde entier.
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-[1600px] mx-auto px-6 w-full">
+          <div className="max-w-2xl">
+            <p className="text-[#e8e7dd] text-base md:text-lg font-['Cormorant_Garamond'] italic mb-4">
+              Paysages et scènes
             </p>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cormorant_Garamond'] text-white leading-tight mb-8">
+              Je suis {settings?.artist_name || 'J. Wattebled'},<br/>
+              {settings?.artist_title || 'peintre impressionniste'}
+            </h1>
+            <Link 
+              href="/galerie"
+              className="inline-block px-10 py-4 bg-[#e8e7dd] text-[#13130d] text-sm tracking-wider hover:bg-[#c9a050] hover:text-white transition-colors"
+            >
+              APPRENDRE ENCORE PLUS
+            </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Collection Section */}
+      <section className="py-24 px-6 bg-[#f7f6ec]">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Section Header */}
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d]">
+              Collection
+            </h2>
+            <Link href="/galerie" className="hidden md:flex items-center gap-3 text-[#13130d] text-xs tracking-wider hover:text-[#c9a050] transition-colors">
+              VOIR TOUTE LA COLLECTION
+              <svg className="w-8 h-[1px] bg-current" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+          
+          <div className="h-px bg-[#13130d]/20 mb-8" />
+          
+          <p className="text-[#6b6860] max-w-3xl mb-12">
+            {settings?.artist_bio || "Ma nouvelle collection de peintures comprend plus de 30 œuvres d'art de style impressionniste et est actuellement exposée dans la section d'art moderne du musée."}
+          </p>
+
+          {/* Masonry Grid */}
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
+            {paintings.slice(0, 6).map((painting, index) => (
+              <div key={painting.id} className="break-inside-avoid mb-8">
+                <Link href={`/galerie`} className="block group">
+                  <div className={`relative overflow-hidden bg-[#e8e7dd] ${
+                    index % 3 === 1 ? 'aspect-[3/4]' : 'aspect-[4/3]'
+                  }`}>
+                    {painting.image_url ? (
+                      <Image
+                        src={painting.image_url}
+                        alt={painting.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#6b6860]">Image</div>
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-xl font-['Cormorant_Garamond'] text-[#13130d] group-hover:text-[#c9a050] transition-colors">
+                    {painting.title}
+                  </h3>
+                  <p className="text-[#6b6860] text-sm">Artiste</p>
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          {/* Load More Button */}
+          <div className="text-center mt-12">
+            <Link 
+              href="/galerie"
+              className="inline-block px-12 py-4 bg-[#c9a050] text-white text-sm tracking-wider rounded-full hover:bg-[#b8923f] transition-colors"
+            >
+              CHARGER PLUS
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Awards Section */}
+      <section className="grid md:grid-cols-2">
+        {/* Left - Image */}
+        <div className="relative h-[500px] md:h-auto">
+          <Image
+            src="https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=800&q=80"
+            alt="Récompenses"
+            fill
+            className="object-cover"
+          />
+        </div>
+        
+        {/* Right - Content */}
+        <div className="bg-[#13130d] py-16 md:py-24 px-8 md:px-16">
+          <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#c9a050] italic mb-6">
+            Mes récompenses
+          </h2>
+          <p className="text-[#e8e7dd]/80 mb-12">
+            Certaines de mes peintures ont été récompensées par des prix spéciaux de l'Académie des Beaux-Arts et exposées dans le monde entier.
+          </p>
 
           {/* Timeline */}
-          <div className="max-w-4xl mx-auto">
-            {exhibitions.length > 0 ? (
-              <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-[#2a2a2a] md:-translate-x-px" />
-                
-                <div className="space-y-12">
-                  {exhibitions.map((exhibition, index) => (
-                    <TimelineItem 
-                      key={exhibition.id} 
-                      exhibition={exhibition} 
-                      index={index} 
-                    />
-                  ))}
+          <div className="space-y-8">
+            {exhibitions.length > 0 ? exhibitions.map((expo) => (
+              <div key={expo.id} className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
+                <div>
+                  <p className="text-[#e8e7dd] font-medium">{expo.month}</p>
+                  <p className="text-[#e8e7dd]">{expo.year}</p>
                 </div>
+                <p className="text-[#e8e7dd]/80">
+                  {expo.title}, {expo.location}
+                </p>
               </div>
-            ) : (
-              /* Fallback content */
-              <div className="relative">
-                <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-[#2a2a2a] md:-translate-x-px" />
-                
-                <div className="space-y-12">
-                  {[
-                    { date: 'Fév 2024', title: 'Lumières de Provence', location: 'Galerie Moderne, Paris' },
-                    { date: 'Sep 2023', title: 'Impressions Nocturnes', location: 'Haven Gallery, New York' },
-                    { date: 'Juin 2022', title: 'Entre Terre et Ciel', location: 'Corey Helford Gallery, Los Angeles' },
-                    { date: 'Oct 2021', title: 'Reflets d\'Automne', location: 'Galerie Nationale, Lyon' },
-                  ].map((item, index) => (
-                    <div 
-                      key={index}
-                      className={`relative flex flex-col md:flex-row gap-8 ${
-                        index % 2 === 0 ? '' : 'md:flex-row-reverse'
-                      }`}
-                    >
-                      {/* Timeline dot */}
-                      <div className="absolute left-0 md:left-1/2 w-3 h-3 bg-[#c9a86c] rounded-full -translate-x-1 md:-translate-x-1.5 mt-2" />
-                      
-                      {/* Date */}
-                      <div className={`md:w-1/2 pl-8 md:pl-0 ${
-                        index % 2 === 0 ? 'md:text-right md:pr-12' : 'md:text-left md:pl-12'
-                      }`}>
-                        <span className="text-[#c9a86c] text-sm uppercase tracking-[0.2em]">
-                          {item.date}
-                        </span>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className={`md:w-1/2 pl-8 md:pl-0 ${
-                        index % 2 === 0 ? 'md:pl-12' : 'md:pr-12 md:text-right'
-                      }`}>
-                        <h3 className="font-serif text-2xl mb-2">{item.title}</h3>
-                        <p className="text-[#888] font-light">{item.location}</p>
-                      </div>
-                    </div>
-                  ))}
+            )) : (
+              <>
+                <div className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
+                  <div>
+                    <p className="text-[#e8e7dd] font-medium">Février</p>
+                    <p className="text-[#e8e7dd]">2024</p>
+                  </div>
+                  <p className="text-[#e8e7dd]/80">Voyage lumineux fantastique, galerie Modern Eden, San Francisco</p>
                 </div>
-              </div>
+                <div className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
+                  <div>
+                    <p className="text-[#e8e7dd] font-medium">Septembre</p>
+                    <p className="text-[#e8e7dd]">2023</p>
+                  </div>
+                  <p className="text-[#e8e7dd]/80">Le Rêve de la Saint-Jean, Galerie Haven, North Port, New York</p>
+                </div>
+              </>
             )}
           </div>
 
-          <div className="text-center mt-16">
-            <Link href="/exhibitions" className="btn btn-outline">
-              Voir toutes les expositions
-            </Link>
-          </div>
+          <Link 
+            href="/expositions"
+            className="inline-flex items-center gap-4 mt-12 text-[#e8e7dd] text-xs tracking-wider hover:text-[#c9a050] transition-colors"
+          >
+            EN SAVOIR PLUS
+            <svg className="w-8 h-[1px] bg-current" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
         </div>
       </section>
 
-      {/* ============================================
-          SHOP / GALLERY SECTION
-      ============================================ */}
-      <section className="py-24 lg:py-32 bg-[#0a0a0a]">
-        <div className="container mx-auto px-6 lg:px-12">
+      {/* Shop Section */}
+      <section className="py-24 px-6 bg-[#f7f6ec]">
+        <div className="max-w-[1400px] mx-auto">
           {/* Section Header */}
-          <div className="max-w-3xl mb-16">
-            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6">
-              Boutique
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d]">
+              Ma boutique
             </h2>
-            <p className="text-[#888] font-light text-lg">
-              Achetez des œuvres originales directement sur ce site et soutenez 
-              mon travail. Paiement sécurisé et garantie complète.
-            </p>
+            <Link href="/boutique" className="hidden md:flex items-center gap-3 text-[#13130d] text-xs tracking-wider hover:text-[#c9a050] transition-colors">
+              AFFICHER TOUS LES ARTICLES
+              <svg className="w-8 h-[1px] bg-current" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
+          
+          <div className="h-px bg-[#13130d]/20 mb-8" />
+          
+          <p className="text-[#6b6860] max-w-3xl mb-12">
+            Achetez des œuvres originales d'artistes indépendants directement sur le site et soutenez-moi dans ma passion. Payez en ligne et bénéficiez d'une garantie complète.
+          </p>
 
           {/* Products Grid */}
-          {paintings.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paintings.map((painting, index) => (
-                <ShopCard key={painting.id} painting={painting} index={index} />
-              ))}
-            </div>
-          ) : (
-            /* Fallback */
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="aspect-[3/4] bg-[#1a1a1a] mb-4 overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-xl">Œuvre {i}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#888] line-through text-sm">1 500 €</span>
-                      <span className="text-[#c9a86c]">1 200 €</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {paintings.slice(0, 6).map((painting) => (
+              <div key={painting.id} className="group">
+                <div className="relative aspect-square overflow-hidden bg-[#e8e7dd] mb-4">
+                  {painting.image_url ? (
+                    <Image
+                      src={painting.image_url}
+                      alt={painting.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#6b6860]">Image</div>
+                  )}
+                  
+                  {/* Discount Badge */}
+                  {painting.original_price && (
+                    <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-[#c9a050] flex items-center justify-center text-white text-xs font-medium">
+                      -20%
                     </div>
+                  )}
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <Link 
+                      href={`/checkout/${painting.id}`}
+                      className="px-6 py-3 bg-transparent border border-white text-white text-xs tracking-wider hover:bg-white hover:text-[#13130d] transition-colors"
+                    >
+                      AJOUTER AU PANIER
+                    </Link>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
 
-          <div className="text-center mt-16">
-            <Link href="/gallery" className="btn btn-outline">
-              Voir toute la galerie
-              <ArrowRight size={18} className="ml-3" />
-            </Link>
+                {/* Tags */}
+                <div className="flex items-center gap-2 text-xs text-[#6b6860] mb-2">
+                  <span className="text-[#c9a050]">ART</span>
+                  <span>,</span>
+                  <span className="text-[#c9a050]">LIVRE</span>
+                  <span>,</span>
+                  <span className="text-[#c9a050]">EXPOSITION</span>
+                </div>
+
+                <h3 className="text-xl font-['Cormorant_Garamond'] text-[#13130d] mb-2 group-hover:text-[#c9a050] transition-colors">
+                  {painting.title}
+                </h3>
+                
+                <div className="flex items-center gap-3">
+                  {painting.original_price && (
+                    <span className="text-[#6b6860] line-through">
+                      {painting.original_price.toFixed(2)} €
+                    </span>
+                  )}
+                  <span className="text-[#c9a050] text-lg">
+                    {painting.price?.toFixed(2)} €
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ============================================
-          NEWSLETTER SECTION
-      ============================================ */}
-      <section className="py-24 lg:py-32 bg-[#111] border-t border-[#1a1a1a]">
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="font-serif text-4xl md:text-5xl mb-6">
-              Newsletter
-            </h2>
-            <p className="text-[#888] font-light mb-10">
-              Recevez des informations sur mes expositions, événements et nouvelles œuvres.
-            </p>
-            
-            <NewsletterForm />
-          </div>
+      {/* Newsletter Section */}
+      <section className="relative py-32 px-6">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=1920&q=80"
+            alt="Newsletter"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+
+        <div className="relative z-10 max-w-2xl mx-auto text-center">
+          <h2 className="text-5xl md:text-6xl font-['Cormorant_Garamond'] text-white italic mb-6">
+            Bulletin
+          </h2>
+          <p className="text-[#e8e7dd]/90 font-['Cormorant_Garamond'] text-xl italic mb-10">
+            Recevez par courriel des mises à jour sur nos expositions, événements et plus encore.
+          </p>
+          
+          <form className="relative max-w-xl mx-auto mb-6">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Saisissez votre adresse e-mail"
+              className="w-full px-6 py-5 pr-16 bg-[#13130d] border border-white/20 text-white placeholder-white/50 focus:border-[#c9a050] focus:outline-none rounded-full"
+            />
+            <button
+              type="submit"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#c9a050] transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </button>
+          </form>
+
+          <label className="flex items-center justify-center gap-3 text-white/70 text-xs">
+            <input type="checkbox" className="rounded border-white/30" />
+            J'ACCEPTE QUE LES DONNÉES QUE J'AI SOUMISES SOIENT <span className="text-[#c9a050]">COLLECTÉES ET STOCKÉES</span>.
+          </label>
         </div>
       </section>
-    </>
+
+      <Footer settings={settings || undefined} />
+
+      {/* Side Buttons */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col">
+        <Link href="/boutique" className="bg-[#c9a050] hover:bg-[#b8923f] w-14 h-14 flex items-center justify-center transition-colors">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+        </Link>
+        <Link href="/galerie" className="bg-[#c9a050] hover:bg-[#b8923f] w-14 h-14 flex items-center justify-center transition-colors border-t border-[#b8923f]">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </Link>
+        <Link href="/contact" className="bg-[#c9a050] hover:bg-[#b8923f] w-14 h-14 flex items-center justify-center transition-colors border-t border-[#b8923f]">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </Link>
+      </div>
+    </main>
   )
 }

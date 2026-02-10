@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import "highlight.js/styles/github.css";
+
+/* Custom utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Prose improvements */
+.prose {
+  line-height: 1.625;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 4rem;
+}
+
+/* Code highlighting overrides */
+.hljs {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  overflow-x: auto !important;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: white;
+  color: #111827;
+}

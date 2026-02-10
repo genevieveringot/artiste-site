@@ -3,163 +3,148 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  LayoutDashboard, 
-  Image as ImageIcon, 
-  Calendar, 
-  LogOut,
-  Menu,
-  X,
-  ExternalLink
-} from 'lucide-react'
 
-const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/paintings', label: 'Tableaux', icon: ImageIcon },
-  { href: '/admin/exhibitions', label: 'Expositions', icon: Calendar },
-]
-
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    // Skip auth check for login page
-    if (pathname === '/admin/login') {
-      setIsAuthenticated(false)
-      setIsLoading(false)
-      return
-    }
-
-    const token = localStorage.getItem('admin_token')
-    if (!token) {
-      router.push('/admin/login')
-    } else {
+    const auth = sessionStorage.getItem('admin_auth')
+    if (auth === 'true') {
       setIsAuthenticated(true)
     }
     setIsLoading(false)
-  }, [router, pathname])
+  }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token')
-    router.push('/admin/login')
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    })
+    
+    if (res.ok) {
+      sessionStorage.setItem('admin_auth', 'true')
+      setIsAuthenticated(true)
+    } else {
+      setError('Mot de passe incorrect')
+    }
   }
 
-  // Show login page without sidebar
-  if (pathname === '/admin/login') {
-    return <>{children}</>
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_auth')
+    setIsAuthenticated(false)
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#c9a86c] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
       </div>
     )
   }
 
   if (!isAuthenticated) {
-    return null
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <h1 className="text-3xl font-light text-center mb-8">Administration</h1>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm text-[var(--text-muted)] mb-2">
+                Mot de passe
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--surface)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none pr-12"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white"
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <button
+              type="submit"
+              className="w-full py-3 bg-[var(--accent)] text-black font-medium hover:bg-[var(--accent-hover)] transition-colors"
+            >
+              Connexion
+            </button>
+          </form>
+          <Link href="/" className="block text-center mt-6 text-[var(--text-muted)] hover:text-[var(--accent)]">
+            ← Retour au site
+          </Link>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111] border-r border-[#1a1a1a] transform transition-transform duration-300 lg:translate-x-0 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-[#1a1a1a]">
-            <Link href="/" className="font-serif text-xl tracking-wider flex items-center gap-2 hover:text-[#c9a86c] transition-colors">
-              ARTISTE
-              <ExternalLink size={14} className="text-[#555]" />
-            </Link>
-            <p className="text-xs text-[#555] mt-1 uppercase tracking-wider">Administration</p>
-          </div>
+  const navItems = [
+    { href: '/admin', label: 'Dashboard', exact: true },
+    { href: '/admin/pages', label: '📄 Pages' },
+    { href: '/admin/paintings', label: '🎨 Tableaux' },
+    { href: '/admin/exhibitions', label: '🏆 Expositions' },
+    { href: '/admin/footer', label: '🦶 Footer' },
+    { href: '/admin/settings', label: '⚙️ Paramètres' },
+  ]
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-1">
+  return (
+    <div className="min-h-screen bg-[var(--background)]">
+      <nav className="bg-[var(--surface)] border-b border-[var(--border)]">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-8">
+            <Link href="/admin" className="text-xl font-light text-[var(--accent)]">
+              Admin
+            </Link>
+            <div className="flex gap-6">
               {navItems.map((item) => {
-                const isActive = pathname === item.href
-                const Icon = item.icon
+                const isActive = item.exact 
+                  ? pathname === item.href 
+                  : pathname.startsWith(item.href)
                 return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setIsSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-300 ${
-                        isActive 
-                          ? 'bg-[#c9a86c]/10 text-[#c9a86c] border-l-2 border-[#c9a86c]' 
-                          : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
-                      }`}
-                    >
-                      <Icon size={18} />
-                      {item.label}
-                    </Link>
-                  </li>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`text-sm ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-white'} transition-colors`}
+                  >
+                    {item.label}
+                  </Link>
                 )
               })}
-            </ul>
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-[#1a1a1a]">
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-sm text-[var(--text-muted)] hover:text-white">
+              Voir le site
+            </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full text-sm text-[#888] hover:text-white hover:bg-[#1a1a1a] transition-colors duration-300"
+              className="text-sm text-red-400 hover:text-red-300"
             >
-              <LogOut size={18} />
               Déconnexion
             </button>
           </div>
         </div>
-      </aside>
-
-      {/* Overlay for mobile */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#111] border-b border-[#1a1a1a] p-4 flex items-center justify-between">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 text-white/80 hover:text-white"
-          >
-            <Menu size={24} />
-          </button>
-          <span className="font-serif text-lg">Admin</span>
-          <div className="w-10" />
-        </header>
-
-        <div className="p-6 lg:p-10">
-          {children}
-        </div>
+      </nav>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {children}
       </main>
-
-      {/* Mobile close button */}
-      {isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed top-4 right-4 z-50 p-2 bg-[#1a1a1a] lg:hidden"
-        >
-          <X size={24} />
-        </button>
-      )}
     </div>
   )
 }
