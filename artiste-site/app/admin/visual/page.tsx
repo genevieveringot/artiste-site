@@ -41,6 +41,7 @@ interface Settings {
 
 const PAGES = [
   { name: 'home', label: 'Accueil', path: '/' },
+  { name: 'artiste', label: "L'artiste", path: '/artiste' },
   { name: 'galerie', label: 'Galerie', path: '/galerie' },
   { name: 'boutique', label: 'Boutique', path: '/boutique' },
   { name: 'contact', label: 'Contact', path: '/contact' },

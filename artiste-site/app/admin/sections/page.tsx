@@ -34,6 +34,7 @@ interface Section {
 
 const PAGES = [
   { name: 'home', label: '🏠 Accueil', icon: '🏠' },
+  { name: 'artiste', label: '👤 L\'artiste', icon: '👤' },
   { name: 'galerie', label: '🎨 Galerie', icon: '🎨' },
   { name: 'boutique', label: '🛒 Boutique', icon: '🛒' },
   { name: 'contact', label: '📧 Contact', icon: '📧' },
@@ -43,6 +44,10 @@ const PAGES = [
 const SECTION_KEYS = [
   { value: 'hero', label: 'Hero (En-tête avec image)', icon: '🖼️' },
   { value: 'about', label: 'À propos (Texte + Image)', icon: '👤' },
+  { value: 'bio', label: 'Biographie (artiste)', icon: '📖' },
+  { value: 'parcours', label: 'Parcours (artiste)', icon: '🛤️' },
+  { value: 'atelier', label: 'Atelier / Vidéo', icon: '🎬' },
+  { value: 'temoignages', label: 'Témoignages', icon: '💬' },
   { value: 'featured', label: 'Collection (Grille tableaux)', icon: '🎨' },
   { value: 'awards', label: 'Récompenses (Timeline)', icon: '🏆' },
   { value: 'shop', label: 'Boutique (Grille produits)', icon: '🛒' },
@@ -54,6 +59,7 @@ const SECTION_KEYS = [
   { value: 'faq', label: 'FAQ', icon: '❓' },
   { value: 'info', label: 'Informations contact', icon: 'ℹ️' },
   { value: 'list', label: 'Liste événements', icon: '📅' },
+  { value: 'expositions', label: 'Expositions (artiste)', icon: '🎭' },
 ]
 
 const defaultSection: Partial<Section> = {
@@ -558,7 +564,132 @@ export default function SectionsAdmin() {
                     </button>
                   </div>
                 )}
+
+                {/* Contrôles avancés de l'image */}
+                {editingSection.image_url && ['bio', 'parcours', 'atelier', 'expositions', 'about'].includes(editingSection.section_key) && (
+                  <div className="mt-4 p-4 bg-[var(--background)] border border-[var(--border)] space-y-4">
+                    <label className="block text-sm text-[var(--text-muted)] font-medium">🎛️ Ajustements de l'image</label>
+                    
+                    {/* Zoom */}
+                    <div>
+                      <label className="block text-xs text-[var(--text-muted)] mb-1">
+                        🔍 Zoom : {editingSection.custom_data?.image_scale || 100}%
+                      </label>
+                      <input
+                        type="range"
+                        min="100"
+                        max="200"
+                        value={editingSection.custom_data?.image_scale || 100}
+                        onChange={(e) => setEditingSection({ 
+                          ...editingSection, 
+                          custom_data: { ...editingSection.custom_data, image_scale: parseInt(e.target.value) }
+                        })}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Position */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-[var(--text-muted)] mb-1">
+                          Position X : {editingSection.custom_data?.image_pos_x || 50}%
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={editingSection.custom_data?.image_pos_x || 50}
+                          onChange={(e) => setEditingSection({ 
+                            ...editingSection, 
+                            custom_data: { ...editingSection.custom_data, image_pos_x: parseInt(e.target.value) }
+                          })}
+                          className="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-[var(--text-muted)] mb-1">
+                          Position Y : {editingSection.custom_data?.image_pos_y || 50}%
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={editingSection.custom_data?.image_pos_y || 50}
+                          onChange={(e) => setEditingSection({ 
+                            ...editingSection, 
+                            custom_data: { ...editingSection.custom_data, image_pos_y: parseInt(e.target.value) }
+                          })}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ratio */}
+                    <div>
+                      <label className="block text-xs text-[var(--text-muted)] mb-2">📐 Format de l'image</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {[
+                          { value: '1/1', label: 'Carré' },
+                          { value: '4/3', label: '4:3' },
+                          { value: '3/4', label: '3:4 (Portrait)' },
+                          { value: '16/9', label: '16:9' },
+                          { value: '9/16', label: '9:16' },
+                        ].map(ratio => (
+                          <button
+                            key={ratio.value}
+                            type="button"
+                            onClick={() => setEditingSection({ 
+                              ...editingSection, 
+                              custom_data: { ...editingSection.custom_data, image_ratio: ratio.value }
+                            })}
+                            className={`px-3 py-1 text-xs border transition-colors ${
+                              (editingSection.custom_data?.image_ratio || '3/4') === ratio.value 
+                                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]' 
+                                : 'border-[var(--border)] text-[var(--text-muted)]'
+                            }`}
+                          >
+                            {ratio.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Cadre décoratif */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="show-frame"
+                        checked={editingSection.custom_data?.show_frame || false}
+                        onChange={(e) => setEditingSection({ 
+                          ...editingSection, 
+                          custom_data: { ...editingSection.custom_data, show_frame: e.target.checked }
+                        })}
+                      />
+                      <label htmlFor="show-frame" className="text-xs text-[var(--text-muted)]">
+                        Afficher un cadre décoratif
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* URL Vidéo (pour section atelier) */}
+              {editingSection.section_key === 'atelier' && (
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-2">🎬 URL de la vidéo (YouTube/Vimeo)</label>
+                  <input
+                    type="text"
+                    value={editingSection.custom_data?.video_url || ''}
+                    onChange={(e) => setEditingSection({ 
+                      ...editingSection, 
+                      custom_data: { ...editingSection.custom_data, video_url: e.target.value }
+                    })}
+                    className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                    placeholder="https://www.youtube.com/embed/..."
+                  />
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Utilisez l'URL d'intégration (embed)</p>
+                </div>
+              )}
 
               {/* Image de fond */}
               <div>
@@ -740,6 +871,133 @@ export default function SectionsAdmin() {
                               rows={3}
                               className="w-full px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
                             />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Témoignages */}
+              {editingSection.section_key === 'temoignages' && (
+                <div className="border-t border-[var(--border)] pt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <label className="block text-sm text-[var(--text-muted)] font-medium">💬 Témoignages</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const testimonials = editingSection.custom_data?.testimonials || []
+                        setEditingSection({
+                          ...editingSection,
+                          custom_data: {
+                            ...editingSection.custom_data,
+                            testimonials: [...testimonials, { title: 'Nouveau témoignage', text: '', author: '', rating: 5 }]
+                          }
+                        })
+                      }}
+                      className="px-3 py-1 bg-[var(--accent)] text-black text-sm hover:bg-[var(--accent-hover)]"
+                    >
+                      + Ajouter un témoignage
+                    </button>
+                  </div>
+                  
+                  {(!editingSection.custom_data?.testimonials || editingSection.custom_data.testimonials.length === 0) ? (
+                    <p className="text-sm text-[var(--text-muted)] italic py-4 text-center bg-[var(--background)] border border-[var(--border)]">
+                      Aucun témoignage. Cliquez sur "+ Ajouter un témoignage" pour commencer.
+                    </p>
+                  ) : (
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                      {editingSection.custom_data.testimonials.map((testimonial: any, index: number) => (
+                        <div key={index} className="bg-[var(--background)] border border-[var(--border)] p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm text-[var(--accent)] font-medium">Témoignage {index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const testimonials = [...editingSection.custom_data.testimonials]
+                                testimonials.splice(index, 1)
+                                setEditingSection({
+                                  ...editingSection,
+                                  custom_data: { ...editingSection.custom_data, testimonials }
+                                })
+                              }}
+                              className="text-sm text-red-400 hover:text-red-300 px-2"
+                            >
+                              🗑️ Supprimer
+                            </button>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-[var(--text-muted)] mb-1">Titre</label>
+                            <input
+                              type="text"
+                              value={testimonial.title || ''}
+                              onChange={(e) => {
+                                const testimonials = [...editingSection.custom_data.testimonials]
+                                testimonials[index] = { ...testimonials[index], title: e.target.value }
+                                setEditingSection({
+                                  ...editingSection,
+                                  custom_data: { ...editingSection.custom_data, testimonials }
+                                })
+                              }}
+                              placeholder="Titre du témoignage..."
+                              className="w-full px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-[var(--text-muted)] mb-1">Texte</label>
+                            <textarea
+                              value={testimonial.text || ''}
+                              onChange={(e) => {
+                                const testimonials = [...editingSection.custom_data.testimonials]
+                                testimonials[index] = { ...testimonials[index], text: e.target.value }
+                                setEditingSection({
+                                  ...editingSection,
+                                  custom_data: { ...editingSection.custom_data, testimonials }
+                                })
+                              }}
+                              placeholder="Contenu du témoignage..."
+                              rows={3}
+                              className="w-full px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-[var(--text-muted)] mb-1">Auteur</label>
+                              <input
+                                type="text"
+                                value={testimonial.author || ''}
+                                onChange={(e) => {
+                                  const testimonials = [...editingSection.custom_data.testimonials]
+                                  testimonials[index] = { ...testimonials[index], author: e.target.value }
+                                  setEditingSection({
+                                    ...editingSection,
+                                    custom_data: { ...editingSection.custom_data, testimonials }
+                                  })
+                                }}
+                                placeholder="Nom de l'auteur"
+                                className="w-full px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-[var(--text-muted)] mb-1">Note (étoiles)</label>
+                              <select
+                                value={testimonial.rating || 5}
+                                onChange={(e) => {
+                                  const testimonials = [...editingSection.custom_data.testimonials]
+                                  testimonials[index] = { ...testimonials[index], rating: parseInt(e.target.value) }
+                                  setEditingSection({
+                                    ...editingSection,
+                                    custom_data: { ...editingSection.custom_data, testimonials }
+                                  })
+                                }}
+                                className="w-full px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                              >
+                                {[5, 4, 3, 2, 1].map(n => (
+                                  <option key={n} value={n}>{'⭐'.repeat(n)}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
                         </div>
                       ))}
