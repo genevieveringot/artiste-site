@@ -667,7 +667,82 @@ export default function VisualEditor() {
               {editingSection.custom_data?.frame_url && (
                 <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: '' } })} className="text-xs text-red-500 hover:text-red-700 mt-2">🗑️ Retirer le cadre</button>
               )}
+
+              {/* Option sans cadre */}
+              <div className="flex items-center gap-2 mt-3">
+                <input 
+                  type="checkbox" 
+                  id="no-frame" 
+                  checked={!editingSection.custom_data?.frame_url}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: '' } })
+                    }
+                  }}
+                  className="rounded"
+                />
+                <label htmlFor="no-frame" className="text-xs text-[#6b6860]">Afficher sans cadre</label>
+              </div>
             </div>
+
+            {/* Ajustement de l'image SANS cadre */}
+            {editingSection.custom_data?.portrait_url && !editingSection.custom_data?.frame_url && (
+              <div className="pt-2 border-t border-[#e8e7dd] space-y-3">
+                <label className="block text-xs text-[#6b6860] font-medium">📷 Ajustement de l'image (sans cadre)</label>
+                
+                {/* Zoom */}
+                <div>
+                  <label className="block text-xs text-[#6b6860] mb-1">🔍 Zoom: {editingSection.custom_data?.photo_scale || 100}%</label>
+                  <input type="range" min="50" max="200" value={editingSection.custom_data?.photo_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_scale: parseInt(e.target.value) } })} className="w-full" />
+                </div>
+
+                {/* Taille du conteneur */}
+                <div>
+                  <label className="block text-xs text-[#6b6860] mb-1">📏 Taille: {editingSection.custom_data?.portrait_size || 300}px</label>
+                  <input type="range" min="150" max="500" value={editingSection.custom_data?.portrait_size || 300} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_size: parseInt(e.target.value) } })} className="w-full" />
+                </div>
+
+                {/* Position */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-[#6b6860]">Position X: {editingSection.custom_data?.photo_pos_x || 50}%</label>
+                    <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_x || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_x: parseInt(e.target.value) } })} className="w-full" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#6b6860]">Position Y: {editingSection.custom_data?.photo_pos_y || 50}%</label>
+                    <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_y || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_y: parseInt(e.target.value) } })} className="w-full" />
+                  </div>
+                </div>
+
+                {/* Forme */}
+                <div>
+                  <label className="block text-xs text-[#6b6860] font-medium mb-2">🔲 Forme</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'square' } })}
+                      className={`flex-1 py-2 text-xs border rounded ${(editingSection.custom_data?.portrait_shape || 'square') === 'square' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
+                    >
+                      ⬜ Carré
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'rounded' } })}
+                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.portrait_shape === 'rounded' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
+                    >
+                      🔵 Arrondi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'portrait' } })}
+                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.portrait_shape === 'portrait' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
+                    >
+                      📷 Portrait
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Ajustement du cadre */}
             {editingSection.custom_data?.frame_url && (
@@ -719,6 +794,13 @@ export default function VisualEditor() {
                   <label className="block text-xs text-[#6b6860] font-medium mb-1">🖼️ Épaisseur du cadre: {editingSection.custom_data?.frame_inset || '8'}%</label>
                   <input type="range" min="3" max="20" value={parseInt(editingSection.custom_data?.frame_inset) || 8} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_inset: e.target.value + '%' } })} className="w-full" />
                   <p className="text-xs text-[#6b6860] mt-1">Ajuste pour que la photo remplisse la zone visible du cadre</p>
+                </div>
+
+                {/* Zoom de la photo */}
+                <div>
+                  <label className="block text-xs text-[#6b6860] font-medium mb-1">🔍 Zoom de la photo: {editingSection.custom_data?.photo_scale || 100}%</label>
+                  <input type="range" min="100" max="200" value={editingSection.custom_data?.photo_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_scale: parseInt(e.target.value) } })} className="w-full" />
+                  <p className="text-xs text-[#6b6860] mt-1">Agrandir pour remplir le cadre sans blancs</p>
                 </div>
 
                 {/* Position de la photo */}

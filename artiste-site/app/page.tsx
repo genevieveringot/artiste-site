@@ -263,7 +263,7 @@ export default function Home() {
                   )}
                 </div>
                 
-                {/* Portrait de l'artiste avec cadre */}
+                {/* Portrait de l'artiste avec ou sans cadre */}
                 {hero?.custom_data?.portrait_url && (
                   <div 
                     className="hidden lg:block absolute z-20"
@@ -273,21 +273,54 @@ export default function Home() {
                       transform: `translateY(-50%) scale(${(hero?.custom_data?.frame_scale || 100) / 100})`,
                     }}
                   >
-                    <div 
-                      className="relative overflow-hidden"
-                      style={{
-                        width: hero?.custom_data?.frame_orientation === 'horizontal' ? '520px' : '380px',
-                        height: hero?.custom_data?.frame_orientation === 'horizontal' ? '380px' : '500px',
-                      }}
-                    >
-                      {/* Photo en arrière-plan - remplit tout */}
+                    {hero?.custom_data?.frame_url ? (
+                      /* Avec cadre */
                       <div 
-                        className="absolute z-0 overflow-hidden"
+                        className="relative overflow-hidden"
                         style={{
-                          top: hero?.custom_data?.frame_inset || '8%',
-                          left: hero?.custom_data?.frame_inset || '8%',
-                          right: hero?.custom_data?.frame_inset || '8%',
-                          bottom: hero?.custom_data?.frame_inset || '8%',
+                          width: hero?.custom_data?.frame_orientation === 'horizontal' ? '520px' : '380px',
+                          height: hero?.custom_data?.frame_orientation === 'horizontal' ? '380px' : '500px',
+                        }}
+                      >
+                        {/* Photo en arrière-plan */}
+                        <div 
+                          className="absolute z-0 overflow-hidden"
+                          style={{
+                            top: hero?.custom_data?.frame_inset || '8%',
+                            left: hero?.custom_data?.frame_inset || '8%',
+                            right: hero?.custom_data?.frame_inset || '8%',
+                            bottom: hero?.custom_data?.frame_inset || '8%',
+                          }}
+                        >
+                          <Image
+                            src={hero.custom_data.portrait_url}
+                            alt="Portrait de l'artiste"
+                            fill
+                            className="object-cover"
+                            style={{
+                              objectPosition: `${hero?.custom_data?.photo_pos_x || 50}% ${hero?.custom_data?.photo_pos_y || 20}%`,
+                              transform: `scale(${(hero?.custom_data?.photo_scale || 100) / 100})`,
+                            }}
+                          />
+                        </div>
+                        {/* Cadre par-dessus */}
+                        <Image
+                          src={hero.custom_data.frame_url}
+                          alt="Cadre"
+                          fill
+                          className="object-fill z-10 drop-shadow-2xl pointer-events-none"
+                        />
+                      </div>
+                    ) : (
+                      /* Sans cadre - juste l'image */
+                      <div 
+                        className="relative overflow-hidden shadow-2xl"
+                        style={{
+                          width: `${hero?.custom_data?.portrait_size || 300}px`,
+                          height: hero?.custom_data?.portrait_shape === 'portrait' 
+                            ? `${(hero?.custom_data?.portrait_size || 300) * 1.3}px`
+                            : `${hero?.custom_data?.portrait_size || 300}px`,
+                          borderRadius: hero?.custom_data?.portrait_shape === 'rounded' ? '50%' : '0',
                         }}
                       >
                         <Image
@@ -296,20 +329,12 @@ export default function Home() {
                           fill
                           className="object-cover"
                           style={{
-                            objectPosition: `${hero?.custom_data?.photo_pos_x || 50}% ${hero?.custom_data?.photo_pos_y || 20}%`
+                            objectPosition: `${hero?.custom_data?.photo_pos_x || 50}% ${hero?.custom_data?.photo_pos_y || 50}%`,
+                            transform: `scale(${(hero?.custom_data?.photo_scale || 100) / 100})`,
                           }}
                         />
                       </div>
-                      {/* Cadre par-dessus */}
-                      {hero?.custom_data?.frame_url && (
-                        <Image
-                          src={hero.custom_data.frame_url}
-                          alt="Cadre"
-                          fill
-                          className="object-fill z-10 drop-shadow-2xl pointer-events-none"
-                        />
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
