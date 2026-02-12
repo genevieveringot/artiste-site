@@ -94,6 +94,17 @@ export default function Header({ currentPage, backgroundImage, title, breadcrumb
               >
                 {t.nav.home}
               </Link>
+
+              <Link 
+                href="/artiste" 
+                className={`text-xs tracking-wider transition-colors ${
+                  currentPage === 'artiste'
+                    ? 'text-[#c9a050] font-medium'
+                    : 'text-[#f7f6ec] hover:text-[#c9a050]'
+                }`}
+              >
+                {locale === 'fr' ? "L'ARTISTE" : 'THE ARTIST'}
+              </Link>
               
               <Link 
                 href="/expositions" 
@@ -288,6 +299,7 @@ export default function Header({ currentPage, backgroundImage, title, breadcrumb
           <div className="md:hidden bg-[#13130d] border-t border-[#f7f6ec]/10">
             <div className="px-6 py-4 space-y-4">
               <Link href="/" onClick={() => setMenuOpen(false)} className={`block text-sm ${currentPage === 'accueil' ? 'text-[#c9a050]' : 'text-[#f7f6ec]'}`}>{t.nav.home}</Link>
+              <Link href="/artiste" onClick={() => setMenuOpen(false)} className={`block text-sm ${currentPage === 'artiste' ? 'text-[#c9a050]' : 'text-[#f7f6ec]'}`}>{locale === 'fr' ? "L'ARTISTE" : 'THE ARTIST'}</Link>
               <Link href="/expositions" onClick={() => setMenuOpen(false)} className={`block text-sm ${currentPage === 'expositions' ? 'text-[#c9a050]' : 'text-[#f7f6ec]'}`}>{t.nav.exhibitions}</Link>
               <Link href="/galerie" onClick={() => setMenuOpen(false)} className={`block text-sm ${currentPage === 'galerie' ? 'text-[#c9a050]' : 'text-[#f7f6ec]'}`}>{t.nav.collections}</Link>
               <Link href="/boutique" onClick={() => setMenuOpen(false)} className={`block text-sm ${currentPage === 'boutique' ? 'text-[#c9a050]' : 'text-[#f7f6ec]'}`}>{t.nav.shop}</Link>

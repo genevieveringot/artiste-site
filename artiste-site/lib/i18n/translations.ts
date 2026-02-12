@@ -3,6 +3,7 @@ export const translations = {
     // Navigation
     nav: {
       home: 'MAISON',
+      artist: "L'ARTISTE",
       exhibitions: 'EXPOSITIONS',
       collections: 'COLLECTIONS',
       shop: 'BOUTIQUE',
@@ -61,6 +62,7 @@ export const translations = {
     // Navigation
     nav: {
       home: 'HOME',
+      artist: 'THE ARTIST',
       exhibitions: 'EXHIBITIONS',
       collections: 'COLLECTIONS',
       shop: 'SHOP',
