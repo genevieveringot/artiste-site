@@ -12,6 +12,8 @@ interface Section {
   id: string
   page_name: string
   section_key: string
+  section_order: number
+  is_visible: boolean
   title: string | null
   subtitle: string | null
   description: string | null
