@@ -207,6 +207,30 @@ export default function SectionsAdmin() {
     }
   }
 
+  async function duplicateSection(section: Section) {
+    const { id, ...sectionData } = section
+    const newSection = {
+      ...sectionData,
+      title: `${section.title || 'Section'} (copie)`,
+      section_order: section.section_order + 1,
+    }
+    
+    const { data, error } = await supabase
+      .from('page_sections')
+      .insert(newSection)
+      .select()
+      .single()
+    
+    if (error) {
+      alert('Erreur: ' + error.message)
+    } else if (data) {
+      fetchSections()
+      // Ouvrir l'éditeur avec la nouvelle section
+      setEditingSection(data)
+      setIsCreating(false)
+    }
+  }
+
   async function toggleVisibility(section: Section) {
     const { error } = await supabase
       .from('page_sections')
@@ -349,6 +373,13 @@ export default function SectionsAdmin() {
                     className="px-3 py-2 bg-[var(--accent)] text-black text-xs md:text-sm hover:bg-[var(--accent-hover)]"
                   >
                     ✏️ Modifier
+                  </button>
+                  <button
+                    onClick={() => duplicateSection(section)}
+                    className="px-3 py-2 bg-blue-500/20 text-blue-400 text-xs md:text-sm hover:bg-blue-500/30"
+                    title="Dupliquer cette section"
+                  >
+                    📋 Dupliquer
                   </button>
                   <button
                     onClick={() => toggleVisibility(section)}

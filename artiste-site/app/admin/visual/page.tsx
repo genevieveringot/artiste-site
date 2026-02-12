@@ -47,6 +47,22 @@ const PAGES = [
   { name: 'expositions', label: 'Expositions', path: '/expositions' },
 ]
 
+const SECTION_KEYS = [
+  { value: 'hero', label: 'Hero (En-tête)', icon: '🖼️' },
+  { value: 'about', label: 'À propos', icon: '👤' },
+  { value: 'featured', label: 'Collection', icon: '🎨' },
+  { value: 'awards', label: 'Récompenses', icon: '🏆' },
+  { value: 'shop', label: 'Boutique', icon: '🛒' },
+  { value: 'newsletter', label: 'Newsletter', icon: '📧' },
+  { value: 'text', label: 'Texte simple', icon: '📝' },
+  { value: 'gallery', label: 'Galerie', icon: '🖼️' },
+  { value: 'cta', label: 'Call to Action', icon: '👆' },
+  { value: 'form', label: 'Formulaire', icon: '📋' },
+  { value: 'faq', label: 'FAQ', icon: '❓' },
+  { value: 'info', label: 'Infos contact', icon: 'ℹ️' },
+  { value: 'list', label: 'Liste événements', icon: '📅' },
+]
+
 export default function VisualEditor() {
   const [activePage, setActivePage] = useState('home')
   const [sections, setSections] = useState<Section[]>([])
@@ -55,6 +71,7 @@ export default function VisualEditor() {
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [showAddSection, setShowAddSection] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
@@ -72,6 +89,49 @@ export default function VisualEditor() {
     ])
     if (sectionsRes.data) setSections(sectionsRes.data)
     if (settingsRes.data) setSettings(settingsRes.data)
+  }
+
+  async function createSection(sectionKey: string) {
+    const maxOrder = sections.length > 0 ? Math.max(...sections.map(s => s.section_order || 0)) : 0
+    const sectionInfo = SECTION_KEYS.find(s => s.value === sectionKey)
+    
+    const newSection = {
+      page_name: activePage,
+      section_key: sectionKey,
+      section_order: maxOrder + 1,
+      is_visible: true,
+      title: sectionInfo?.label || 'Nouvelle section',
+      subtitle: '',
+      description: '',
+      button_text: '',
+      button_link: '',
+      image_url: '',
+      background_color: '#f7f6ec',
+      text_color: '#13130d',
+      accent_color: '#c9a050',
+      image_overlay_opacity: 0.3,
+      custom_data: sectionKey === 'faq' ? { questions: [] } : {},
+    }
+
+    const { data, error } = await supabase
+      .from('page_sections')
+      .insert(newSection)
+      .select()
+      .single()
+
+    if (error) {
+      alert('Erreur: ' + error.message)
+    } else if (data) {
+      setSections([...sections, data])
+      setEditingSection(data)
+      setShowAddSection(false)
+      // Refresh iframe
+      if (iframeRef.current) {
+        setTimeout(() => {
+          iframeRef.current!.src = iframeRef.current!.src
+        }, 500)
+      }
+    }
   }
 
   async function saveSection() {
@@ -834,6 +894,13 @@ export default function VisualEditor() {
                     </button>
                   ))
                 )}
+                {/* Bouton ajouter section mobile */}
+                <button
+                  onClick={() => setShowAddSection(true)}
+                  className="w-full p-3 mt-2 border-2 border-dashed border-[#c9a050]/50 text-[#c9a050] hover:border-[#c9a050] hover:bg-[#c9a050]/10 transition-colors text-sm"
+                >
+                  + Ajouter une section
+                </button>
               </div>
             </div>
           )}
@@ -892,11 +959,42 @@ export default function VisualEditor() {
                   </button>
                 ))
               )}
+              {/* Bouton ajouter section */}
+              <button
+                onClick={() => setShowAddSection(true)}
+                className="w-full p-3 mt-2 border-2 border-dashed border-[#c9a050]/50 text-[#c9a050] hover:border-[#c9a050] hover:bg-[#c9a050]/10 transition-colors text-sm"
+              >
+                + Ajouter une section
+              </button>
             </div>
 
             {renderSectionEditor()}
           </div>
         </div>
+
+        {/* Modal ajouter section */}
+        {showAddSection && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white border border-[#c9a050]/30 w-full max-w-md max-h-[80vh] overflow-y-auto">
+              <div className="p-4 border-b border-[#c9a050]/30 bg-[#f7f6ec] flex justify-between items-center sticky top-0">
+                <h3 className="font-medium text-[#13130d]">Ajouter une section</h3>
+                <button onClick={() => setShowAddSection(false)} className="text-xl text-[#6b6860] hover:text-[#13130d]">×</button>
+              </div>
+              <div className="p-4 grid grid-cols-2 gap-2">
+                {SECTION_KEYS.map(section => (
+                  <button
+                    key={section.value}
+                    onClick={() => createSection(section.value)}
+                    className="p-4 border border-[#e8e7dd] hover:border-[#c9a050] hover:bg-[#c9a050]/10 transition-colors text-left"
+                  >
+                    <span className="text-2xl block mb-2">{section.icon}</span>
+                    <span className="text-sm text-[#13130d]">{section.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Preview iframe */}
         <div className="flex-1 border border-[#c9a050]/30 bg-white overflow-hidden min-h-[400px] lg:min-h-0">
