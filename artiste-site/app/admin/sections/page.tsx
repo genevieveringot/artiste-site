@@ -406,17 +406,48 @@ export default function SectionsAdmin() {
                 />
               </div>
 
-              {/* Titre */}
-              <div>
-                <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Titre</label>
-                <input
-                  type="text"
-                  value={editingSection.title || ''}
-                  onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
-                  placeholder="Titre de la section"
-                />
-              </div>
+              {/* Titre - 2 lignes pour hero, 1 ligne pour les autres */}
+              {editingSection.section_key === 'hero' ? (
+                <>
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Titre - Ligne 1</label>
+                    <input
+                      type="text"
+                      value={(editingSection.title || '').split('|')[0]?.trim() || ''}
+                      onChange={(e) => {
+                        const line2 = (editingSection.title || '').split('|')[1]?.trim() || ''
+                        setEditingSection({ ...editingSection, title: line2 ? `${e.target.value}|${line2}` : e.target.value })
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                      placeholder="Ex: Je suis J. Wattebled"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Titre - Ligne 2</label>
+                    <input
+                      type="text"
+                      value={(editingSection.title || '').split('|')[1]?.trim() || ''}
+                      onChange={(e) => {
+                        const line1 = (editingSection.title || '').split('|')[0]?.trim() || ''
+                        setEditingSection({ ...editingSection, title: e.target.value ? `${line1}|${e.target.value}` : line1 })
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                      placeholder="Ex: Artiste peintre"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Titre</label>
+                  <input
+                    type="text"
+                    value={editingSection.title || ''}
+                    onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                    placeholder="Titre de la section"
+                  />
+                </div>
+              )}
 
               {/* Sous-titre */}
               <div>
