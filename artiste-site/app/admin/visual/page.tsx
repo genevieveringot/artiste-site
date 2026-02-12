@@ -48,6 +48,9 @@ const PAGES = [
   { name: 'boutique', label: 'Boutique', path: '/boutique' },
   { name: 'contact', label: 'Contact', path: '/contact' },
   { name: 'expositions', label: 'Expositions', path: '/expositions' },
+  { name: 'panier', label: 'Panier', path: '/panier' },
+  { name: 'commandes', label: 'Commandes', path: '/commandes' },
+  { name: 'connexion', label: 'Connexion', path: '/connexion' },
 ]
 
 const SECTION_KEYS = [
@@ -75,6 +78,7 @@ export default function VisualEditor() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [showAddSection, setShowAddSection] = useState(false)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
@@ -133,6 +137,47 @@ export default function VisualEditor() {
         setTimeout(() => {
           iframeRef.current!.src = iframeRef.current!.src
         }, 500)
+      }
+    }
+  }
+
+  async function deleteSection(id: string) {
+    if (!confirm('Supprimer cette section ?')) return
+    
+    const { error } = await supabase
+      .from('page_sections')
+      .delete()
+      .eq('id', id)
+    
+    if (!error) {
+      setSections(sections.filter(s => s.id !== id))
+      if (editingSection?.id === id) {
+        setEditingSection(null)
+      }
+      setMenuOpenId(null)
+      // Refresh iframe
+      if (iframeRef.current) {
+        setTimeout(() => {
+          iframeRef.current!.src = iframeRef.current!.src
+        }, 500)
+      }
+    }
+  }
+
+  async function toggleVisibility(section: Section) {
+    const { error } = await supabase
+      .from('page_sections')
+      .update({ is_visible: !section.is_visible })
+      .eq('id', section.id)
+    
+    if (!error) {
+      setSections(sections.map(s => 
+        s.id === section.id ? { ...s, is_visible: !s.is_visible } : s
+      ))
+      setMenuOpenId(null)
+      // Refresh iframe
+      if (iframeRef.current) {
+        iframeRef.current.src = iframeRef.current.src
       }
     }
   }
@@ -940,43 +985,85 @@ export default function VisualEditor() {
                   <p className="text-sm text-[#6b6860] p-3">Aucune section</p>
                 ) : (
                   sections.map(section => (
-                    <button
+                    <div
                       key={section.id}
-                      onClick={() => {
-                        setEditingSection(section)
-                        // Scroll iframe to section
-                        if (iframeRef.current) {
-                          const baseUrl = `https://artiste-site-seven.vercel.app${currentPath}`
-                          iframeRef.current.src = `${baseUrl}#section-${section.section_key}`
-                        }
-                      }}
-                      className="w-full text-left p-3 mb-2 border border-[#e8e7dd] hover:border-[#c9a050]/50 transition-colors"
+                      className={`relative mb-2 border border-[#e8e7dd] hover:border-[#c9a050]/50 transition-colors ${!section.is_visible ? 'opacity-50' : ''}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {section.section_key === 'hero' && '🖼️'}
-                          {section.section_key === 'about' && '👤'}
-                          {section.section_key === 'gallery' && '🖼️'}
-                          {section.section_key === 'faq' && '❓'}
-                          {section.section_key === 'info' && 'ℹ️'}
-                          {section.section_key === 'form' && '📋'}
-                          {section.section_key === 'featured' && '🎨'}
-                          {section.section_key === 'newsletter' && '📧'}
-                          {section.section_key === 'awards' && '🏆'}
-                          {section.section_key === 'shop' && '🛒'}
-                          {!['hero', 'about', 'gallery', 'faq', 'info', 'form', 'featured', 'newsletter', 'awards', 'shop'].includes(section.section_key) && '📝'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-[#13130d]">
-                            {section.section_key.charAt(0).toUpperCase() + section.section_key.slice(1)}
+                      <button
+                        onClick={() => {
+                          setEditingSection(section)
+                          setMenuOpenId(null)
+                          // Scroll iframe to section
+                          if (iframeRef.current) {
+                            const baseUrl = `https://artiste-site-seven.vercel.app${currentPath}`
+                            iframeRef.current.src = `${baseUrl}#section-${section.section_key}`
+                          }
+                        }}
+                        className="w-full text-left p-3 pr-16"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
+                            {section.section_key === 'hero' && '🖼️'}
+                            {section.section_key === 'about' && '👤'}
+                            {section.section_key === 'bio' && '📖'}
+                            {section.section_key === 'gallery' && '🖼️'}
+                            {section.section_key === 'faq' && '❓'}
+                            {section.section_key === 'info' && 'ℹ️'}
+                            {section.section_key === 'form' && '📋'}
+                            {section.section_key === 'featured' && '🎨'}
+                            {section.section_key === 'newsletter' && '📧'}
+                            {section.section_key === 'awards' && '🏆'}
+                            {section.section_key === 'shop' && '🛒'}
+                            {!['hero', 'about', 'bio', 'gallery', 'faq', 'info', 'form', 'featured', 'newsletter', 'awards', 'shop'].includes(section.section_key) && '📝'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-[#13130d]">
+                              {section.section_key.charAt(0).toUpperCase() + section.section_key.slice(1)}
+                            </div>
+                            <div className="text-xs text-[#6b6860] truncate">
+                              {section.title || '(sans titre)'}
+                            </div>
                           </div>
-                          <div className="text-xs text-[#6b6860] truncate">
-                            {section.title || '(sans titre)'}
-                          </div>
+                          <span className="text-[#c9a050]">→</span>
                         </div>
-                        <span className="text-[#c9a050]">→</span>
+                      </button>
+                      
+                      {/* Menu 3 points mobile */}
+                      <div className="absolute top-2 right-8">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMenuOpenId(menuOpenId === section.id ? null : section.id)
+                          }}
+                          className="p-1 hover:bg-[#e8e7dd] rounded"
+                        >
+                          <span className="text-[#6b6860]">⋮</span>
+                        </button>
+                        
+                        {menuOpenId === section.id && (
+                          <div className="absolute right-0 top-8 bg-white border border-[#e8e7dd] shadow-lg z-10 min-w-[140px]">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleVisibility(section)
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-[#f7f6ec] flex items-center gap-2"
+                            >
+                              {section.is_visible ? '👁️ Masquer' : '👁️ Afficher'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteSection(section.id)
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                            >
+                              🗑️ Supprimer
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </button>
+                    </div>
                   ))
                 )}
                 {/* Bouton ajouter section mobile */}
@@ -1002,46 +1089,88 @@ export default function VisualEditor() {
                 <p className="text-sm text-[#6b6860] p-3">Aucune section</p>
               ) : (
                 sections.map(section => (
-                  <button
+                  <div
                     key={section.id}
-                    onClick={() => {
-                      setEditingSection(section)
-                      // Scroll iframe to section
-                      if (iframeRef.current) {
-                        const baseUrl = `https://artiste-site-seven.vercel.app${currentPath}`
-                        iframeRef.current.src = `${baseUrl}#section-${section.section_key}`
-                      }
-                    }}
-                    className={`w-full text-left p-3 mb-2 border transition-colors ${
+                    className={`relative mb-2 border transition-colors ${
                       editingSection?.id === section.id
                         ? 'border-[#c9a050] bg-[#c9a050]/10'
                         : 'border-[#e8e7dd] hover:border-[#c9a050]/50'
-                    }`}
+                    } ${!section.is_visible ? 'opacity-50' : ''}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
-                        {section.section_key === 'hero' && '🖼️'}
-                        {section.section_key === 'about' && '👤'}
-                        {section.section_key === 'gallery' && '🖼️'}
-                        {section.section_key === 'faq' && '❓'}
-                        {section.section_key === 'info' && 'ℹ️'}
-                        {section.section_key === 'form' && '📋'}
-                        {section.section_key === 'featured' && '🎨'}
-                        {section.section_key === 'newsletter' && '📧'}
-                        {section.section_key === 'awards' && '🏆'}
-                        {section.section_key === 'shop' && '🛒'}
-                        {!['hero', 'about', 'gallery', 'faq', 'info', 'form', 'featured', 'newsletter', 'awards', 'shop'].includes(section.section_key) && '📝'}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-[#13130d]">
-                          {section.section_key.charAt(0).toUpperCase() + section.section_key.slice(1)}
-                        </div>
-                        <div className="text-xs text-[#6b6860] truncate">
-                          {section.title || '(sans titre)'}
+                    <button
+                      onClick={() => {
+                        setEditingSection(section)
+                        setMenuOpenId(null)
+                        // Scroll iframe to section
+                        if (iframeRef.current) {
+                          const baseUrl = `https://artiste-site-seven.vercel.app${currentPath}`
+                          iframeRef.current.src = `${baseUrl}#section-${section.section_key}`
+                        }
+                      }}
+                      className="w-full text-left p-3 pr-10"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {section.section_key === 'hero' && '🖼️'}
+                          {section.section_key === 'about' && '👤'}
+                          {section.section_key === 'bio' && '📖'}
+                          {section.section_key === 'gallery' && '🖼️'}
+                          {section.section_key === 'faq' && '❓'}
+                          {section.section_key === 'info' && 'ℹ️'}
+                          {section.section_key === 'form' && '📋'}
+                          {section.section_key === 'featured' && '🎨'}
+                          {section.section_key === 'newsletter' && '📧'}
+                          {section.section_key === 'awards' && '🏆'}
+                          {section.section_key === 'shop' && '🛒'}
+                          {!['hero', 'about', 'bio', 'gallery', 'faq', 'info', 'form', 'featured', 'newsletter', 'awards', 'shop'].includes(section.section_key) && '📝'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-[#13130d]">
+                            {section.section_key.charAt(0).toUpperCase() + section.section_key.slice(1)}
+                          </div>
+                          <div className="text-xs text-[#6b6860] truncate">
+                            {section.title || '(sans titre)'}
+                          </div>
                         </div>
                       </div>
+                    </button>
+                    
+                    {/* Menu 3 points */}
+                    <div className="absolute top-2 right-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setMenuOpenId(menuOpenId === section.id ? null : section.id)
+                        }}
+                        className="p-1 hover:bg-[#e8e7dd] rounded"
+                      >
+                        <span className="text-[#6b6860]">⋮</span>
+                      </button>
+                      
+                      {menuOpenId === section.id && (
+                        <div className="absolute right-0 top-8 bg-white border border-[#e8e7dd] shadow-lg z-10 min-w-[140px]">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleVisibility(section)
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#f7f6ec] flex items-center gap-2"
+                          >
+                            {section.is_visible ? '👁️ Masquer' : '👁️ Afficher'}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteSection(section.id)
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                          >
+                            🗑️ Supprimer
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
               {/* Bouton ajouter section */}

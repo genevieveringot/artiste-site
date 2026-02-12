@@ -103,11 +103,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { href: '/admin', label: '🏠 Dashboard', exact: true },
-    { href: '/admin/visual', label: '✨ Éditeur visuel' },
-    { href: '/admin/sections', label: '📄 Sections' },
+    { href: '/admin/visual', label: '✨ Éditeur' },
     { href: '/admin/paintings', label: '🎨 Tableaux' },
-    { href: '/admin/exhibitions', label: '🏆 Expositions' },
-    { href: '/admin/settings', label: '⚙️ Paramètres' },
+    { href: '/admin/shop', label: '🛒 Boutique' },
+    { href: '/admin/exhibitions', label: '🏆 Expos' },
+    { href: '/admin/settings', label: '⚙️ Config' },
   ]
 
   return (

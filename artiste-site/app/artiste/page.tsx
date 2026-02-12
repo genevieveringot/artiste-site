@@ -136,13 +136,10 @@ export default function ArtistePage() {
                 )}
                 {bioSection.description && (
                   <div 
-                    className="prose prose-lg max-w-none space-y-4"
+                    className="prose prose-lg max-w-none rich-content"
                     style={{ color: `${bioSection.text_color || '#13130d'}cc` }}
-                  >
-                    {bioSection.description.split('\n\n').map((paragraph, i) => (
-                      <p key={i} className="leading-relaxed">{paragraph}</p>
-                    ))}
-                  </div>
+                    dangerouslySetInnerHTML={{ __html: bioSection.description }}
+                  />
                 )}
                 {bioSection.button_text && (
                   <Link 
@@ -188,13 +185,10 @@ export default function ArtistePage() {
                 </h2>
                 {parcoursSection.description && (
                   <div 
-                    className="space-y-4"
+                    className="prose prose-lg max-w-none rich-content prose-invert"
                     style={{ color: `${parcoursSection.text_color || '#f7f6ec'}cc` }}
-                  >
-                    {parcoursSection.description.split('\n\n').map((paragraph, i) => (
-                      <p key={i} className="leading-relaxed">{paragraph}</p>
-                    ))}
-                  </div>
+                    dangerouslySetInnerHTML={{ __html: parcoursSection.description }}
+                  />
                 )}
                 {parcoursSection.button_text && (
                   <Link 

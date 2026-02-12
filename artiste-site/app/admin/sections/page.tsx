@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import RichTextEditor from '@/components/RichTextEditor'
 
 interface FaqItem {
   q: string
@@ -500,12 +501,10 @@ export default function SectionsAdmin() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Description</label>
-                <textarea
+                <label className="block text-sm text-[var(--text-muted)] mb-2">📝 Description (texte enrichi)</label>
+                <RichTextEditor
                   value={editingSection.description || ''}
-                  onChange={(e) => setEditingSection({ ...editingSection, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
+                  onChange={(value) => setEditingSection({ ...editingSection, description: value })}
                   placeholder="Description de la section"
                 />
               </div>
