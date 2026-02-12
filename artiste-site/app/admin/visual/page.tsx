@@ -41,20 +41,32 @@ interface Settings {
   header_contact: string
 }
 
-const PAGES = [
+// Pages principales (onglets directs)
+const MAIN_PAGES = [
   { name: 'home', label: 'Accueil', path: '/' },
   { name: 'artiste', label: "L'artiste", path: '/artiste' },
   { name: 'galerie', label: 'Galerie', path: '/galerie' },
   { name: 'boutique', label: 'Boutique', path: '/boutique' },
   { name: 'contact', label: 'Contact', path: '/contact' },
   { name: 'expositions', label: 'Expositions', path: '/expositions' },
-  { name: 'panier', label: 'Panier', path: '/panier' },
-  { name: 'commandes', label: 'Commandes', path: '/commandes' },
-  { name: 'connexion', label: 'Connexion', path: '/connexion' },
 ]
+
+// Pages compte/commandes (sous-menu)
+const ACCOUNT_PAGES = [
+  { name: 'panier', label: '🛒 Panier', path: '/panier' },
+  { name: 'connexion', label: '🔐 Connexion', path: '/connexion' },
+  { name: 'inscription', label: '📝 Inscription', path: '/inscription' },
+  { name: 'compte', label: '👤 Mon compte', path: '/compte' },
+  { name: 'commandes', label: '📦 Mes commandes', path: '/commandes' },
+  { name: 'checkout', label: '💳 Paiement', path: '/checkout' },
+]
+
+// Toutes les pages (pour la recherche)
+const ALL_PAGES = [...MAIN_PAGES, ...ACCOUNT_PAGES]
 
 const SECTION_KEYS = [
   { value: 'hero', label: 'Hero (En-tête)', icon: '🖼️' },
+  { value: 'page-header', label: 'En-tête de page', icon: '📄' },
   { value: 'about', label: 'À propos', icon: '👤' },
   { value: 'featured', label: 'Collection', icon: '🎨' },
   { value: 'awards', label: 'Récompenses', icon: '🏆' },
@@ -78,6 +90,7 @@ export default function VisualEditor() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [showAddSection, setShowAddSection] = useState(false)
+  const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -303,7 +316,7 @@ export default function VisualEditor() {
     })
   }
 
-  const currentPath = PAGES.find(p => p.name === activePage)?.path || '/'
+  const currentPath = ALL_PAGES.find(p => p.name === activePage)?.path || '/'
 
   // Render section-specific editor
   function renderSectionEditor() {
@@ -935,12 +948,14 @@ export default function VisualEditor() {
 
       {/* Page tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-        {PAGES.map(page => (
+        {/* Pages principales */}
+        {MAIN_PAGES.map(page => (
           <button
             key={page.name}
             onClick={() => {
               setActivePage(page.name)
               setEditingSection(null)
+              setShowAccountMenu(false)
             }}
             className={`px-3 py-2 text-xs md:text-sm whitespace-nowrap transition-colors ${
               activePage === page.name
@@ -951,6 +966,41 @@ export default function VisualEditor() {
             {page.label}
           </button>
         ))}
+        
+        {/* Menu déroulant Compte/Commandes */}
+        <div className="relative">
+          <button
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className={`px-3 py-2 text-xs md:text-sm whitespace-nowrap transition-colors flex items-center gap-1 ${
+              ACCOUNT_PAGES.some(p => p.name === activePage)
+                ? 'bg-[#c9a050] text-black'
+                : 'bg-white border border-[#c9a050]/30 text-[#13130d] hover:border-[#c9a050]'
+            }`}
+          >
+            🛍️ Compte
+            <span className={`transition-transform ${showAccountMenu ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+          
+          {showAccountMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-[#c9a050]/30 shadow-lg z-20 min-w-[180px]">
+              {ACCOUNT_PAGES.map(page => (
+                <button
+                  key={page.name}
+                  onClick={() => {
+                    setActivePage(page.name)
+                    setEditingSection(null)
+                    setShowAccountMenu(false)
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-[#f7f6ec] transition-colors ${
+                    activePage === page.name ? 'bg-[#c9a050]/20 font-medium' : ''
+                  }`}
+                >
+                  {page.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main content */}
