@@ -256,7 +256,7 @@ export default function ExhibitionsAdmin() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   required
                   placeholder="Ex: Exposition Impressionnisme"
                 />
@@ -268,7 +268,7 @@ export default function ExhibitionsAdmin() {
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   required
                   placeholder="Ex: Galerie Moderne, Paris"
                 />
@@ -281,7 +281,7 @@ export default function ExhibitionsAdmin() {
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => handleStartDateChange(e.target.value)}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                     required
                   />
                 </div>
@@ -291,7 +291,7 @@ export default function ExhibitionsAdmin() {
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   />
                 </div>
               </div>
@@ -315,8 +315,18 @@ export default function ExhibitionsAdmin() {
                 />
                 {isUploading && <p className="text-sm text-[var(--accent)] mt-1">Upload en cours...</p>}
                 {formData.image_url && (
-                  <div className="mt-2 relative w-32 h-32">
-                    <Image src={formData.image_url} alt="Preview" fill className="object-cover" />
+                  <div className="mt-2">
+                    <div className="relative w-32 h-32 group">
+                      <Image src={formData.image_url} alt="Preview" fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_url: '' })}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                        title="Supprimer l'image"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -327,7 +337,7 @@ export default function ExhibitionsAdmin() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
                   placeholder="Décrivez l'événement..."
                 />
               </div>

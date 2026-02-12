@@ -139,7 +139,7 @@ export default function FooterAdmin() {
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+          className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
         />
       </div>
       
@@ -152,14 +152,14 @@ export default function FooterAdmin() {
               value={link.label}
               onChange={(e) => updateLink(column, index, 'label', e.target.value)}
               placeholder="Texte"
-              className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-white text-sm focus:border-[var(--accent)] focus:outline-none"
+              className="flex-1 px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] text-sm focus:border-[var(--accent)] focus:outline-none"
             />
             <input
               type="text"
               value={link.href}
               onChange={(e) => updateLink(column, index, 'href', e.target.value)}
               placeholder="/page"
-              className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-white text-sm focus:border-[var(--accent)] focus:outline-none"
+              className="flex-1 px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] text-sm focus:border-[var(--accent)] focus:outline-none"
             />
             <button
               type="button"
@@ -198,7 +198,7 @@ export default function FooterAdmin() {
                 type="text"
                 value={settings.footer_description}
                 onChange={(e) => setSettings({ ...settings, footer_description: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="Ex: Artiste peintre"
               />
             </div>
@@ -209,7 +209,7 @@ export default function FooterAdmin() {
                 type="text"
                 value={settings.footer_address}
                 onChange={(e) => setSettings({ ...settings, footer_address: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="Ex: Nord de la France"
               />
             </div>
@@ -220,7 +220,7 @@ export default function FooterAdmin() {
                 type="text"
                 value={settings.footer_phone}
                 onChange={(e) => setSettings({ ...settings, footer_phone: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="Ex: +33 6 12 34 56 78"
               />
             </div>
@@ -251,7 +251,7 @@ export default function FooterAdmin() {
               type="text"
               value={settings.footer_col3_title}
               onChange={(e) => setSettings({ ...settings, footer_col3_title: e.target.value })}
-              className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+              className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
           
@@ -262,7 +262,7 @@ export default function FooterAdmin() {
                 type="url"
                 value={settings.social_x}
                 onChange={(e) => setSettings({ ...settings, social_x: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="https://x.com/votre-compte"
               />
             </div>
@@ -273,7 +273,7 @@ export default function FooterAdmin() {
                 type="url"
                 value={settings.social_instagram}
                 onChange={(e) => setSettings({ ...settings, social_instagram: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="https://instagram.com/votre-compte"
               />
             </div>
@@ -284,7 +284,7 @@ export default function FooterAdmin() {
                 type="url"
                 value={settings.social_facebook}
                 onChange={(e) => setSettings({ ...settings, social_facebook: e.target.value })}
-                className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 placeholder="https://facebook.com/votre-page"
               />
             </div>

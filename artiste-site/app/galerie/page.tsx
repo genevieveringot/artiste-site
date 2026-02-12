@@ -18,6 +18,23 @@ interface Painting {
   description: string | null
 }
 
+interface PageSection {
+  id: string
+  section_key: string
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  button_text: string | null
+  button_link: string | null
+  image_url: string | null
+  image_overlay_opacity: number
+  background_color: string
+  text_color: string
+  accent_color: string
+  is_visible: boolean
+  custom_data: any
+}
+
 export default function GaleriePage() {
   const [paintings, setPaintings] = useState<Painting[]>([])
   const [filteredPaintings, setFilteredPaintings] = useState<Painting[]>([])
@@ -25,17 +42,35 @@ export default function GaleriePage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [selectedPainting, setSelectedPainting] = useState<Painting | null>(null)
   const [settings, setSettings] = useState<any>({})
+  const [sections, setSections] = useState<PageSection[]>([])
   const [menuOpen, setMenuOpen] = useState(false)
-  const [expoDropdown, setExpoDropdown] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   
   const supabase = createClient()
 
+  // Helper to get a section by key
+  const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
+
+  // Scroll to section if hash in URL
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash) {
+      setTimeout(() => {
+        const element = document.querySelector(hash)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 500)
+    }
+  }, [])
+
   useEffect(() => {
     async function fetchData() {
-      const [paintingsRes, settingsRes] = await Promise.all([
+      const [paintingsRes, settingsRes, sectionsRes, logoRes] = await Promise.all([
         supabase.from('paintings').select('*').order('created_at', { ascending: false }),
-        supabase.from('settings').select('*').single()
+        supabase.from('settings').select('*').single(),
+        supabase.from('page_sections').select('*').eq('page_name', 'galerie').order('section_order'),
+        supabase.from('page_sections').select('custom_data').eq('page_name', 'global').eq('section_key', 'logo').single()
       ])
       
       if (paintingsRes.data) {
@@ -44,7 +79,9 @@ export default function GaleriePage() {
         const cats = Array.from(new Set(paintingsRes.data.map(p => p.category).filter(Boolean))) as string[]
         setCategories(cats)
       }
-      if (settingsRes.data) setSettings(settingsRes.data)
+      const logoData = logoRes.data?.custom_data || {}
+      if (settingsRes.data) setSettings({ ...settingsRes.data, ...logoData })
+      if (sectionsRes.data) setSections(sectionsRes.data)
     }
     fetchData()
 
@@ -61,6 +98,11 @@ export default function GaleriePage() {
       setFilteredPaintings(paintings.filter(p => p.category === category))
     }
   }
+
+  // Get custom categories from section or use dynamic ones
+  const gallerySection = getSection('gallery')
+  const customCategories = gallerySection?.custom_data?.categories as string[] | undefined
+  const displayCategories = customCategories && customCategories.length > 0 ? customCategories : categories
 
   return (
     <main className="min-h-screen bg-[#f7f6ec]">
@@ -91,7 +133,7 @@ export default function GaleriePage() {
             </div>
             
             <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Image src="/logo.png" alt="J. Wattebled" width={200} height={60} className="h-10 md:h-12 w-auto object-contain" />
+              <Image src={settings?.logo_main || "/logo.png"} alt={settings?.artist_name || "Logo"} width={320} height={100} className="h-16 md:h-20 w-auto object-contain" />
             </Link>
             
             <div className="hidden md:flex items-center gap-8">
@@ -123,87 +165,145 @@ export default function GaleriePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
-        <div className="absolute inset-0">
-          <Image
-            src={settings.header_galerie || "https://images.unsplash.com/photo-1594732832278-abd644401426?w=1920&q=80"}
-            alt="Galerie"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30" />
-        </div>
-
-        <div className="relative z-10 text-center px-6">
-          <h1 className="text-4xl md:text-6xl font-['Cormorant_Garamond'] text-white mb-4">
-            Grille de la galerie
-          </h1>
-          <p className="text-white/80 font-['Cormorant_Garamond'] text-lg">
-            Maison / <span className="text-[#c9a050]">Grille de la galerie</span>
-          </p>
-        </div>
-      </section>
-
-      {/* Categories Filter */}
-      <section className="py-12 px-6 bg-[#f7f6ec]">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <button
-              onClick={() => filterByCategory('all')}
-              className={`px-8 py-3 text-sm tracking-wider transition-colors ${
-                activeCategory === 'all'
-                  ? 'bg-[#c9a050] text-white'
-                  : 'bg-white text-[#5c5a56] hover:text-[#c9a050] border border-[#e8e7dd]'
-              }`}
-            >
-              TOUS
-            </button>
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => filterByCategory(cat)}
-                className={`px-8 py-3 text-sm tracking-wider transition-colors ${
-                  activeCategory === cat
-                    ? 'bg-[#c9a050] text-white'
-                    : 'bg-white text-[#5c5a56] hover:text-[#c9a050] border border-[#e8e7dd]'
-                }`}
-              >
-                {cat.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          {/* Paintings Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredPaintings.map((painting) => (
+      {(() => {
+        const hero = getSection('hero')
+        return (
+          <section id="section-hero" className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
+            <div className="absolute inset-0">
+              <Image
+                src={hero?.image_url || settings.header_galerie || "https://images.unsplash.com/photo-1594732832278-abd644401426?w=1920&q=80"}
+                alt="Galerie"
+                fill
+                className="object-cover"
+                priority
+              />
               <div 
-                key={painting.id}
-                className="group cursor-pointer"
-                onClick={() => setSelectedPainting(painting)}
+                className="absolute inset-0" 
+                style={{ backgroundColor: `rgba(0,0,0,${hero?.image_overlay_opacity ?? 0.3})` }}
+              />
+            </div>
+
+            <div className="relative z-10 text-center px-6">
+              <h1 
+                className="text-4xl md:text-6xl font-['Cormorant_Garamond'] mb-4"
+                style={{ color: hero?.text_color || '#ffffff' }}
               >
-                <div className="relative aspect-[4/3] overflow-hidden mb-4">
-                  <Image
-                    src={painting.image_url}
-                    alt={painting.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm tracking-wider">
-                      VOIR DÉTAILS
-                    </span>
-                  </div>
+                {hero?.title || 'Collections'}
+              </h1>
+              <p className="font-['Cormorant_Garamond'] text-lg" style={{ color: `${hero?.text_color || '#ffffff'}cc` }}>
+                Maison / <span style={{ color: hero?.accent_color || '#c9a050' }}>{hero?.title || 'Collections'}</span>
+              </p>
+            </div>
+          </section>
+        )
+      })()}
+
+      {/* Gallery Section */}
+      {(() => {
+        const gallery = getSection('gallery')
+        return (
+          <section 
+            id="section-gallery"
+            className="py-12 px-6"
+            style={{ backgroundColor: gallery?.background_color || '#f7f6ec' }}
+          >
+            <div className="max-w-6xl mx-auto">
+              {/* Section title and description */}
+              {(gallery?.title || gallery?.description) && (
+                <div className="text-center mb-8">
+                  {gallery?.title && (
+                    <h2 
+                      className="text-3xl md:text-4xl font-['Cormorant_Garamond'] mb-4"
+                      style={{ color: gallery?.text_color || '#13130d' }}
+                    >
+                      {gallery.title}
+                    </h2>
+                  )}
+                  {gallery?.description && (
+                    <p 
+                      className="max-w-2xl mx-auto"
+                      style={{ color: `${gallery?.text_color || '#13130d'}99` }}
+                    >
+                      {gallery.description}
+                    </p>
+                  )}
                 </div>
-                <h3 className="text-lg font-['Cormorant_Garamond'] text-[#13130d] mb-1">{painting.title}</h3>
-                {painting.price && (
-                  <p className="text-[#c9a050] font-medium">{painting.price.toLocaleString('fr-FR')} €</p>
-                )}
+              )}
+
+              {/* Categories Filter */}
+              <div className="flex flex-wrap justify-center gap-4 mb-12">
+                <button
+                  onClick={() => filterByCategory('all')}
+                  className="px-8 py-3 text-sm tracking-wider transition-colors"
+                  style={{
+                    backgroundColor: activeCategory === 'all' ? (gallery?.accent_color || '#c9a050') : '#ffffff',
+                    color: activeCategory === 'all' ? '#ffffff' : (gallery?.text_color || '#5c5a56'),
+                    border: activeCategory === 'all' ? 'none' : '1px solid #e8e7dd'
+                  }}
+                >
+                  {gallery?.custom_data?.allLabel || 'TOUS'}
+                </button>
+                {displayCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => filterByCategory(cat)}
+                    className="px-8 py-3 text-sm tracking-wider transition-colors"
+                    style={{
+                      backgroundColor: activeCategory === cat ? (gallery?.accent_color || '#c9a050') : '#ffffff',
+                      color: activeCategory === cat ? '#ffffff' : (gallery?.text_color || '#5c5a56'),
+                      border: activeCategory === cat ? 'none' : '1px solid #e8e7dd'
+                    }}
+                  >
+                    {cat.toUpperCase()}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
+              {/* Paintings Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredPaintings.map((painting) => (
+                  <div 
+                    key={painting.id}
+                    className="group cursor-pointer"
+                    onClick={() => setSelectedPainting(painting)}
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden mb-4">
+                      <Image
+                        src={painting.image_url}
+                        alt={painting.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm tracking-wider">
+                          VOIR DÉTAILS
+                        </span>
+                      </div>
+                    </div>
+                    <h3 
+                      className="text-lg font-['Cormorant_Garamond'] mb-1"
+                      style={{ color: gallery?.text_color || '#13130d' }}
+                    >
+                      {painting.title}
+                    </h3>
+                    {painting.price && (
+                      <p className="font-medium" style={{ color: gallery?.accent_color || '#c9a050' }}>
+                        {painting.price.toLocaleString('fr-FR')} €
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {filteredPaintings.length === 0 && (
+                <div className="text-center py-12" style={{ color: `${gallery?.text_color || '#13130d'}80` }}>
+                  Aucune œuvre dans cette catégorie.
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       <Footer settings={settings} />
 

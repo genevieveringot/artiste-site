@@ -6,6 +6,23 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Footer from '@/components/Footer'
 
+interface PageSection {
+  id: string
+  section_key: string
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  button_text: string | null
+  button_link: string | null
+  image_url: string | null
+  image_overlay_opacity: number
+  background_color: string
+  text_color: string
+  accent_color: string
+  is_visible: boolean
+  custom_data: any
+}
+
 export default function ContactPage() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -15,15 +32,38 @@ export default function ContactPage() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [settings, setSettings] = useState<any>({})
+  const [sections, setSections] = useState<PageSection[]>([])
   
   const supabase = createClient()
 
+  // Helper to get a section by key
+  const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
+
+  // Scroll to section if hash in URL
   useEffect(() => {
-    async function fetchSettings() {
-      const { data } = await supabase.from('settings').select('*').single()
-      if (data) setSettings(data)
+    const hash = window.location.hash
+    if (hash) {
+      setTimeout(() => {
+        const element = document.querySelector(hash)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 500)
     }
-    fetchSettings()
+  }, [])
+
+  useEffect(() => {
+    async function fetchData() {
+      const [settingsRes, sectionsRes, logoRes] = await Promise.all([
+        supabase.from('settings').select('*').single(),
+        supabase.from('page_sections').select('*').eq('page_name', 'contact').order('section_order'),
+        supabase.from('page_sections').select('custom_data').eq('page_name', 'global').eq('section_key', 'logo').single()
+      ])
+      const logoData = logoRes.data?.custom_data || {}
+      if (settingsRes.data) setSettings({ ...settingsRes.data, ...logoData })
+      if (sectionsRes.data) setSections(sectionsRes.data)
+    }
+    fetchData()
 
     const handleScroll = () => setScrolled(window.scrollY > 100)
     window.addEventListener('scroll', handleScroll)
@@ -40,7 +80,7 @@ export default function ContactPage() {
     setTimeout(() => setStatus('idle'), 3000)
   }
 
-  const faqs = [
+  const defaultFaqs = [
     { q: "Quand l'atelier est-il ouvert ?", a: "L'atelier est ouvert du lundi au vendredi de 9h à 18h." },
     { q: "Comment acheter une œuvre ?", a: "Vous pouvez acheter directement sur le site via la boutique ou me contacter pour une commande personnalisée." },
     { q: "Proposez-vous des commandes personnalisées ?", a: "Oui, je réalise des œuvres sur commande. Contactez-moi pour discuter de votre projet." },
@@ -48,6 +88,12 @@ export default function ContactPage() {
     { q: "Puis-je visiter l'atelier ?", a: "Oui, sur rendez-vous uniquement. Contactez-moi pour organiser une visite." },
     { q: "Les œuvres sont-elles encadrées ?", a: "Les tableaux sont vendus sans cadre, mais je peux vous conseiller sur l'encadrement." },
   ]
+  
+  // Get FAQs from section or use defaults
+  const faqSection = getSection('faq')
+  const faqs = (faqSection?.custom_data?.questions && faqSection.custom_data.questions.length > 0) 
+    ? faqSection.custom_data.questions 
+    : defaultFaqs
 
   return (
     <main className="min-h-screen bg-[#f7f6ec]">
@@ -78,7 +124,7 @@ export default function ContactPage() {
             </div>
             
             <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Image src="/logo.png" alt="J. Wattebled" width={200} height={60} className="h-10 md:h-12 w-auto object-contain" />
+              <Image src={settings?.logo_main || "/logo.png"} alt={settings?.artist_name || "Logo"} width={320} height={100} className="h-16 md:h-20 w-auto object-contain" />
             </Link>
             
             <div className="hidden md:flex items-center gap-8">
@@ -110,7 +156,7 @@ export default function ContactPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
+      <section id="section-hero" className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
         <div className="absolute inset-0">
           <Image
             src={settings.header_contact || "https://images.unsplash.com/photo-1594732832278-abd644401426?w=1920&q=80"}
@@ -130,7 +176,7 @@ export default function ContactPage() {
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-24 px-6 bg-[#f7f6ec]">
+      <section id="section-form" className="py-24 px-6 bg-[#f7f6ec]">
         <div className="max-w-[1000px] mx-auto">
           <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d] mb-4">
             Contactez-nous
@@ -190,105 +236,164 @@ export default function ContactPage() {
       </section>
 
       {/* Map + Info Section */}
-      <section className="grid md:grid-cols-2">
-        {/* Map */}
-        <div className="h-[500px] md:h-auto">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2530.5!2d2.9!3d50.6!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTDCsDM2JzAwLjAiTiAywrA1NCcwMC4wIkU!5e0!3m2!1sfr!2sfr!4v1234567890"
-            width="100%"
-            height="100%"
-            style={{ border: 0, minHeight: '500px' }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-
-        {/* Info */}
-        <div className="bg-[#13130d] py-16 px-8 md:px-16">
-          <h2 className="text-4xl font-['Cormorant_Garamond'] text-white mb-12">
-            Informations sur l'atelier
-          </h2>
-
-          <div className="mb-12">
-            <h3 className="text-white font-medium mb-6 tracking-wider">Contacts</h3>
-            <div className="h-px bg-white/10 mb-6" />
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-[120px_1fr] gap-4">
-                <span className="text-[#9a9588]">Téléphone</span>
-                <span className="text-[#c9a050]">{settings.footer_phone || '+33 6 00 00 00 00'}</span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-4">
-                <span className="text-[#9a9588]">Adresse</span>
-                <span className="text-[#e8e7dd]">{settings.footer_address || 'Nord de la France'}</span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-4">
-                <span className="text-[#9a9588]">E-mail</span>
-                <span className="text-[#e8e7dd]">{settings.contact_email || 'contact@jwattebled.fr'}</span>
-              </div>
+      {(() => {
+        const info = getSection('info')
+        const mapAddress = encodeURIComponent(info?.custom_data?.address || settings.footer_address || '38 route Wierre, 62240 Longfossé, France')
+        return (
+          <section id="section-info" className="grid md:grid-cols-2">
+            {/* Map */}
+            <div className="h-[500px] md:h-auto relative">
+              <iframe
+                src={`https://maps.google.com/maps?q=${mapAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: '500px' }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${mapAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-6 left-6 flex items-center gap-2 px-5 py-3 bg-[#13130d] text-white text-sm tracking-wider hover:bg-[#c9a050] transition-colors shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                ITINÉRAIRE
+              </a>
             </div>
-          </div>
 
-          <div>
-            <h3 className="text-white font-medium mb-6 tracking-wider">Horaires d'ouverture</h3>
-            <div className="h-px bg-white/10 mb-6" />
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-[180px_1fr] gap-4">
-                <span className="text-[#9a9588]">Du lundi au vendredi</span>
-                <span className="text-[#e8e7dd]">9h00 – 18h00</span>
-              </div>
-              <div className="grid grid-cols-[180px_1fr] gap-4">
-                <span className="text-[#9a9588]">Samedi</span>
-                <span className="text-[#e8e7dd]">Sur rendez-vous</span>
-              </div>
-              <div className="grid grid-cols-[180px_1fr] gap-4">
-                <span className="text-[#9a9588]">Dimanche</span>
-                <span className="text-[#e8e7dd]">Fermé</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            {/* Info */}
+            <div 
+              className="py-16 px-8 md:px-16"
+              style={{ backgroundColor: info?.background_color || '#13130d' }}
+            >
+              <h2 
+                className="text-4xl font-['Cormorant_Garamond'] mb-12"
+                style={{ color: info?.text_color || '#ffffff' }}
+              >
+                {info?.title || 'Informations sur l\'atelier'}
+              </h2>
 
-      {/* FAQ Section */}
-      <section className="py-24 px-6 bg-[#f7f6ec]">
-        <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d] mb-4">
-            Foire aux questions
-          </h2>
-          <div className="h-px bg-[#13130d]/20 mb-12" />
+              <div className="mb-12">
+                <h3 className="font-medium mb-6 tracking-wider" style={{ color: info?.text_color || '#ffffff' }}>Contacts</h3>
+                <div className="h-px mb-6" style={{ backgroundColor: `${info?.text_color || '#ffffff'}20` }} />
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-[120px_1fr] gap-4">
+                    <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>Téléphone</span>
+                    <span style={{ color: info?.accent_color || '#c9a050' }}>
+                      {info?.custom_data?.phone || settings.footer_phone || '+33 6 00 00 00 00'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[120px_1fr] gap-4">
+                    <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>Adresse</span>
+                    <span style={{ color: info?.text_color || '#e8e7dd' }}>
+                      {info?.custom_data?.address || settings.footer_address || 'Nord de la France'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[120px_1fr] gap-4">
+                    <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>E-mail</span>
+                    <span style={{ color: info?.text_color || '#e8e7dd' }}>
+                      {info?.custom_data?.email || settings.contact_email || 'contact@exemple.fr'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="grid md:grid-cols-2 gap-x-16 gap-y-0">
-            {faqs.map((faq, index) => (
-              <div key={index} className="border-b border-[#13130d]/20">
-                <button
-                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full py-6 flex justify-between items-center text-left"
-                >
-                  <span className="text-lg font-['Cormorant_Garamond'] text-[#13130d] pr-4">
-                    {faq.q}
-                  </span>
-                  <svg 
-                    className={`w-5 h-5 text-[#13130d] flex-shrink-0 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {openFaq === index && (
-                  <div className="pb-6 text-[#6b6860]">
-                    {faq.a}
+              <div>
+                <h3 className="font-medium mb-6 tracking-wider" style={{ color: info?.text_color || '#ffffff' }}>Horaires d'ouverture</h3>
+                <div className="h-px mb-6" style={{ backgroundColor: `${info?.text_color || '#ffffff'}20` }} />
+                
+                {info?.custom_data?.hours ? (
+                  <div className="space-y-4">
+                    {info.custom_data.hours.split('\n').map((line: string, i: number) => {
+                      const parts = line.split(':')
+                      if (parts.length >= 2) {
+                        return (
+                          <div key={i} className="grid grid-cols-[180px_1fr] gap-4">
+                            <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>{parts[0].trim()}</span>
+                            <span style={{ color: info?.text_color || '#e8e7dd' }}>{parts.slice(1).join(':').trim()}</span>
+                          </div>
+                        )
+                      }
+                      return <p key={i} style={{ color: info?.text_color || '#e8e7dd' }}>{line}</p>
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-[180px_1fr] gap-4">
+                      <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>Du lundi au vendredi</span>
+                      <span style={{ color: info?.text_color || '#e8e7dd' }}>9h00 – 18h00</span>
+                    </div>
+                    <div className="grid grid-cols-[180px_1fr] gap-4">
+                      <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>Samedi</span>
+                      <span style={{ color: info?.text_color || '#e8e7dd' }}>Sur rendez-vous</span>
+                    </div>
+                    <div className="grid grid-cols-[180px_1fr] gap-4">
+                      <span style={{ color: `${info?.text_color || '#ffffff'}80` }}>Dimanche</span>
+                      <span style={{ color: info?.text_color || '#e8e7dd' }}>Fermé</span>
+                    </div>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
+          </section>
+        )
+      })()}
+
+      {/* FAQ Section */}
+      {(() => {
+        const faq = getSection('faq')
+        if (faq === undefined) return null
+        return (
+          <section id="section-faq" className="py-24 px-6" style={{ backgroundColor: faq?.background_color || '#f7f6ec' }}>
+            <div className="max-w-[1200px] mx-auto">
+              <h2 
+                className="text-4xl md:text-5xl font-['Cormorant_Garamond'] mb-4"
+                style={{ color: faq?.text_color || '#13130d' }}
+              >
+                {faq?.title || 'Foire aux questions'}
+              </h2>
+              <div className="h-px mb-12" style={{ backgroundColor: `${faq?.text_color || '#13130d'}20` }} />
+
+              <div className="grid md:grid-cols-2 gap-x-16 gap-y-0">
+                {faqs.map((item: { q: string; a: string }, index: number) => (
+                  <div key={index} className="border-b" style={{ borderColor: `${faq?.text_color || '#13130d'}20` }}>
+                    <button
+                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                      className="w-full py-6 flex justify-between items-center text-left"
+                    >
+                      <span 
+                        className="text-lg font-['Cormorant_Garamond'] pr-4"
+                        style={{ color: faq?.text_color || '#13130d' }}
+                      >
+                        {item.q}
+                      </span>
+                      <svg 
+                        className={`w-5 h-5 flex-shrink-0 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                        style={{ color: faq?.text_color || '#13130d' }}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {openFaq === index && (
+                      <div className="pb-6" style={{ color: `${faq?.text_color || '#13130d'}80` }}>
+                        {item.a}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      })()}
 
       <Footer settings={settings} />
 

@@ -82,7 +82,7 @@ export default function Header({ currentPage, backgroundImage, title, breadcrumb
             </div>
             
             <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Image src="/logo.png" alt="J. Wattebled" width={200} height={60} className="h-10 md:h-12 w-auto object-contain" />
+              <Image src="/logo.png" alt="J. Wattebled" width={280} height={80} className="h-14 md:h-16 w-auto object-contain" />
             </Link>
             
             <div className="hidden md:flex items-center gap-8">

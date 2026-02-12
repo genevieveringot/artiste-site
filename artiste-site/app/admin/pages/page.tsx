@@ -23,7 +23,7 @@ interface PageSection {
   custom_data: any
 }
 
-const PAGES = [
+const DEFAULT_PAGES = [
   { key: 'home', label: '🏠 Accueil' },
   { key: 'galerie', label: '🎨 Galerie' },
   { key: 'boutique', label: '🛒 Boutique' },
@@ -32,11 +32,21 @@ const PAGES = [
   { key: 'calendrier', label: '📅 Calendrier' }
 ]
 
+const PAGE_TEMPLATES = [
+  { key: 'blank', label: '📄 Page vierge', sections: ['hero'] },
+  { key: 'galerie', label: '🎨 Comme Galerie', sections: ['hero', 'gallery'] },
+  { key: 'contact', label: '📧 Comme Contact', sections: ['hero', 'form', 'info', 'faq'] },
+  { key: 'boutique', label: '🛒 Comme Boutique', sections: ['hero', 'products'] },
+]
+
 export default function PagesAdmin() {
   const [sections, setSections] = useState<PageSection[]>([])
   const [selectedPage, setSelectedPage] = useState('home')
   const [editingSection, setEditingSection] = useState<PageSection | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isNewPageModalOpen, setIsNewPageModalOpen] = useState(false)
+  const [newPageName, setNewPageName] = useState('')
+  const [newPageTemplate, setNewPageTemplate] = useState('blank')
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [uploadingField, setUploadingField] = useState<string | null>(null)
@@ -56,7 +66,69 @@ export default function PagesAdmin() {
     if (data) setSections(data)
   }
 
+  // Get unique pages from sections (dynamic)
+  const uniquePageNames = Array.from(new Set(sections.map(s => s.page_name)))
+  const PAGES = DEFAULT_PAGES.filter(p => uniquePageNames.includes(p.key))
+    .concat(
+      uniquePageNames
+        .filter(name => !DEFAULT_PAGES.find(p => p.key === name))
+        .map(name => ({ key: name, label: `📄 ${name.charAt(0).toUpperCase() + name.slice(1)}` }))
+    )
+
   const pageSections = sections.filter(s => s.page_name === selectedPage)
+
+  async function handleCreatePage() {
+    if (!newPageName.trim()) return
+    
+    const pageKey = newPageName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+    
+    // Check if page already exists
+    if (uniquePageNames.includes(pageKey)) {
+      alert('Cette page existe déjà !')
+      return
+    }
+
+    setIsSaving(true)
+    
+    // Get template sections
+    const template = PAGE_TEMPLATES.find(t => t.key === newPageTemplate)
+    const templateSections = template?.sections || ['hero']
+    
+    // Create sections for the new page
+    const newSections = templateSections.map((sectionKey, index) => ({
+      page_name: pageKey,
+      section_key: sectionKey,
+      section_order: index + 1,
+      title: sectionKey === 'hero' ? newPageName : sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
+      background_color: sectionKey === 'hero' ? '#13130d' : '#f7f6ec',
+      text_color: sectionKey === 'hero' ? '#ffffff' : '#13130d',
+      accent_color: '#c9a050',
+      image_overlay_opacity: 0.4,
+      is_visible: true,
+      custom_data: {}
+    }))
+
+    await supabase.from('page_sections').insert(newSections)
+    
+    setIsSaving(false)
+    setIsNewPageModalOpen(false)
+    setNewPageName('')
+    setNewPageTemplate('blank')
+    setMessage(`Page "${newPageName}" créée !`)
+    setTimeout(() => setMessage(''), 3000)
+    fetchSections()
+    setSelectedPage(pageKey)
+  }
+
+  async function handleDeletePage(pageKey: string) {
+    if (!confirm(`Supprimer la page "${pageKey}" et toutes ses sections ?`)) return
+    
+    await supabase.from('page_sections').delete().eq('page_name', pageKey)
+    fetchSections()
+    setSelectedPage('home')
+    setMessage('Page supprimée')
+    setTimeout(() => setMessage(''), 3000)
+  }
 
   function openEditModal(section: PageSection) {
     setEditingSection({ ...section })
@@ -147,18 +219,35 @@ export default function PagesAdmin() {
       {/* Page Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
         {PAGES.map(page => (
-          <button
-            key={page.key}
-            onClick={() => setSelectedPage(page.key)}
-            className={`px-4 py-2 text-sm transition-colors ${
-              selectedPage === page.key
-                ? 'bg-[var(--accent)] text-black'
-                : 'bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)]'
-            }`}
-          >
-            {page.label}
-          </button>
+          <div key={page.key} className="relative group">
+            <button
+              onClick={() => setSelectedPage(page.key)}
+              className={`px-4 py-2 text-sm transition-colors ${
+                selectedPage === page.key
+                  ? 'bg-[var(--accent)] text-black'
+                  : 'bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)]'
+              }`}
+            >
+              {page.label}
+            </button>
+            {/* Delete button for custom pages */}
+            {!DEFAULT_PAGES.find(p => p.key === page.key) && (
+              <button
+                onClick={() => handleDeletePage(page.key)}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Supprimer cette page"
+              >
+                ×
+              </button>
+            )}
+          </div>
         ))}
+        <button
+          onClick={() => setIsNewPageModalOpen(true)}
+          className="px-4 py-2 text-sm bg-green-600 text-white hover:bg-green-700 transition-colors"
+        >
+          + Nouvelle page
+        </button>
       </div>
 
       {/* Sections List */}
@@ -184,7 +273,7 @@ export default function PagesAdmin() {
                 >
                   {section.image_url && (
                     <>
-                      <Image src={section.image_url} alt="" fill className="object-cover" />
+                      <Image src={section.image_url} alt="" fill className="object-cover" unoptimized />
                       <div 
                         className="absolute inset-0" 
                         style={{ backgroundColor: `rgba(0,0,0,${section.image_overlay_opacity})` }}
@@ -295,7 +384,7 @@ export default function PagesAdmin() {
                     type="text"
                     value={editingSection.title || ''}
                     onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   />
                 </div>
 
@@ -305,7 +394,7 @@ export default function PagesAdmin() {
                     type="text"
                     value={editingSection.subtitle || ''}
                     onChange={(e) => setEditingSection({ ...editingSection, subtitle: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   />
                 </div>
 
@@ -315,7 +404,7 @@ export default function PagesAdmin() {
                     value={editingSection.description || ''}
                     onChange={(e) => setEditingSection({ ...editingSection, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none resize-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
                   />
                 </div>
 
@@ -326,7 +415,7 @@ export default function PagesAdmin() {
                       type="text"
                       value={editingSection.button_text || ''}
                       onChange={(e) => setEditingSection({ ...editingSection, button_text: e.target.value })}
-                      className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                       placeholder="Ex: DÉCOUVRIR"
                     />
                   </div>
@@ -336,7 +425,7 @@ export default function PagesAdmin() {
                       type="text"
                       value={editingSection.button_link || ''}
                       onChange={(e) => setEditingSection({ ...editingSection, button_link: e.target.value })}
-                      className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                       placeholder="Ex: /galerie"
                     />
                   </div>
@@ -353,7 +442,7 @@ export default function PagesAdmin() {
                     type="text"
                     value={editingSection.image_url || ''}
                     onChange={(e) => setEditingSection({ ...editingSection, image_url: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none mb-2"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none mb-2"
                     placeholder="https://..."
                   />
                   <input
@@ -368,11 +457,19 @@ export default function PagesAdmin() {
 
                 {editingSection.image_url && (
                   <div className="relative w-full h-40">
-                    <Image src={editingSection.image_url} alt="" fill className="object-cover" />
+                    <Image src={editingSection.image_url} alt="" fill className="object-cover" unoptimized />
                     <div 
                       className="absolute inset-0" 
                       style={{ backgroundColor: `rgba(0,0,0,${editingSection.image_overlay_opacity})` }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, image_url: '' })}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors z-10"
+                      title="Supprimer l'image"
+                    >
+                      ×
+                    </button>
                   </div>
                 )}
 
@@ -410,7 +507,7 @@ export default function PagesAdmin() {
                         type="text"
                         value={editingSection.background_color}
                         onChange={(e) => setEditingSection({ ...editingSection, background_color: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-white text-sm focus:border-[var(--accent)] focus:outline-none"
+                        className="flex-1 px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] text-sm focus:border-[var(--accent)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -427,7 +524,7 @@ export default function PagesAdmin() {
                         type="text"
                         value={editingSection.text_color}
                         onChange={(e) => setEditingSection({ ...editingSection, text_color: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-white text-sm focus:border-[var(--accent)] focus:outline-none"
+                        className="flex-1 px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] text-sm focus:border-[var(--accent)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -444,7 +541,7 @@ export default function PagesAdmin() {
                         type="text"
                         value={editingSection.accent_color}
                         onChange={(e) => setEditingSection({ ...editingSection, accent_color: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] text-white text-sm focus:border-[var(--accent)] focus:outline-none"
+                        className="flex-1 px-3 py-2 bg-white border border-[var(--border)] text-[#13130d] text-sm focus:border-[var(--accent)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -506,6 +603,129 @@ export default function PagesAdmin() {
                 </div>
               </div>
 
+              {/* Custom Data - Contact Info */}
+              {editingSection.section_key === 'info' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-[var(--accent)]">📍 Coordonnées</h3>
+                  
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">Adresse</label>
+                    <input
+                      type="text"
+                      value={editingSection.custom_data?.address || ''}
+                      onChange={(e) => setEditingSection({ 
+                        ...editingSection, 
+                        custom_data: { ...editingSection.custom_data, address: e.target.value }
+                      })}
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                      placeholder="123 Rue de l'Art, 75001 Paris"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">Téléphone</label>
+                    <input
+                      type="text"
+                      value={editingSection.custom_data?.phone || ''}
+                      onChange={(e) => setEditingSection({ 
+                        ...editingSection, 
+                        custom_data: { ...editingSection.custom_data, phone: e.target.value }
+                      })}
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                      placeholder="+33 1 23 45 67 89"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={editingSection.custom_data?.email || ''}
+                      onChange={(e) => setEditingSection({ 
+                        ...editingSection, 
+                        custom_data: { ...editingSection.custom_data, email: e.target.value }
+                      })}
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                      placeholder="contact@exemple.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[var(--text-muted)] mb-2">Horaires</label>
+                    <textarea
+                      value={editingSection.custom_data?.hours || ''}
+                      onChange={(e) => setEditingSection({ 
+                        ...editingSection, 
+                        custom_data: { ...editingSection.custom_data, hours: e.target.value }
+                      })}
+                      rows={3}
+                      className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
+                      placeholder="Lundi - Vendredi : 9h - 18h&#10;Samedi : 10h - 16h&#10;Dimanche : Fermé"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Data - FAQ */}
+              {editingSection.section_key === 'faq' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-[var(--accent)]">❓ Questions fréquentes</h3>
+                  <p className="text-sm text-[var(--text-muted)]">Format : une question par ligne, suivie de sa réponse</p>
+                  
+                  {(editingSection.custom_data?.questions || [{ q: '', a: '' }]).map((item: { q: string; a: string }, index: number) => (
+                    <div key={index} className="p-4 bg-[var(--background)] border border-[var(--border)] space-y-3">
+                      <div>
+                        <label className="block text-sm text-[var(--text-muted)] mb-1">Question {index + 1}</label>
+                        <input
+                          type="text"
+                          value={item.q}
+                          onChange={(e) => {
+                            const questions = [...(editingSection.custom_data?.questions || [])]
+                            questions[index] = { ...questions[index], q: e.target.value }
+                            setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, questions } })
+                          }}
+                          className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[var(--text-muted)] mb-1">Réponse</label>
+                        <textarea
+                          value={item.a}
+                          onChange={(e) => {
+                            const questions = [...(editingSection.custom_data?.questions || [])]
+                            questions[index] = { ...questions[index], a: e.target.value }
+                            setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, questions } })
+                          }}
+                          rows={2}
+                          className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const questions = (editingSection.custom_data?.questions || []).filter((_: any, i: number) => i !== index)
+                          setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, questions } })
+                        }}
+                        className="text-red-400 text-sm hover:text-red-300"
+                      >
+                        Supprimer cette question
+                      </button>
+                    </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const questions = [...(editingSection.custom_data?.questions || []), { q: '', a: '' }]
+                      setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, questions } })
+                    }}
+                    className="w-full py-2 border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  >
+                    + Ajouter une question
+                  </button>
+                </div>
+              )}
+
               {/* Preview */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-[var(--accent)]">👁️ Aperçu</h3>
@@ -515,7 +735,7 @@ export default function PagesAdmin() {
                 >
                   {editingSection.image_url && (
                     <>
-                      <Image src={editingSection.image_url} alt="" fill className="object-cover" />
+                      <Image src={editingSection.image_url} alt="" fill className="object-cover" unoptimized />
                       <div 
                         className="absolute inset-0" 
                         style={{ backgroundColor: `rgba(0,0,0,${editingSection.image_overlay_opacity})` }}
@@ -568,6 +788,79 @@ export default function PagesAdmin() {
                 className="flex-1 py-3 bg-[var(--accent)] text-black hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50"
               >
                 {isSaving ? 'Enregistrement...' : '💾 Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Page Modal */}
+      {isNewPageModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
+          <div className="bg-[var(--surface)] w-full max-w-md p-6">
+            <h2 className="text-xl font-medium mb-6">Créer une nouvelle page</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-2">Nom de la page</label>
+                <input
+                  type="text"
+                  value={newPageName}
+                  onChange={(e) => setNewPageName(e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
+                  placeholder="Ex: À propos, Actualités..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-2">Template</label>
+                <div className="space-y-2">
+                  {PAGE_TEMPLATES.map(template => (
+                    <label 
+                      key={template.key}
+                      className={`flex items-center gap-3 p-3 border cursor-pointer transition-colors ${
+                        newPageTemplate === template.key 
+                          ? 'border-[var(--accent)] bg-[var(--accent)]/10' 
+                          : 'border-[var(--border)] hover:border-[var(--accent)]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="template"
+                        value={template.key}
+                        checked={newPageTemplate === template.key}
+                        onChange={(e) => setNewPageTemplate(e.target.value)}
+                        className="accent-[var(--accent)]"
+                      />
+                      <div>
+                        <div className="font-medium">{template.label}</div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          Sections: {template.sections.join(', ')}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setIsNewPageModalOpen(false)
+                  setNewPageName('')
+                  setNewPageTemplate('blank')
+                }}
+                className="flex-1 py-3 border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreatePage}
+                disabled={isSaving || !newPageName.trim()}
+                className="flex-1 py-3 bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? 'Création...' : '✓ Créer la page'}
               </button>
             </div>
           </div>

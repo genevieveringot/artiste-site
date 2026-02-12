@@ -34,7 +34,10 @@ interface Settings {
   artist_name: string
   artist_title: string
   artist_bio: string
+  logo_main?: string
+  logo_light?: string
   hero_image: string
+  hero_overlay_opacity?: number
   contact_email: string
   footer_description?: string
   footer_address?: string
@@ -49,6 +52,25 @@ interface Settings {
   social_facebook?: string
 }
 
+interface PageSection {
+  id: string
+  page_name: string
+  section_key: string
+  section_order: number
+  is_visible: boolean
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  button_text: string | null
+  button_link: string | null
+  image_url: string | null
+  image_overlay_opacity: number
+  background_color: string
+  text_color: string
+  accent_color: string
+  custom_data?: any
+}
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [expoDropdown, setExpoDropdown] = useState(false)
@@ -56,21 +78,53 @@ export default function Home() {
   const [paintings, setPaintings] = useState<Painting[]>([])
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [settings, setSettings] = useState<Settings | null>(null)
+  const [sections, setSections] = useState<PageSection[]>([])
   const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(true)
   
   const supabase = createClient()
 
+  // Helper to get a section by key
+  const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
+
+  // Scroll to section if hash in URL
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash) {
+      setTimeout(() => {
+        const element = document.querySelector(hash)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 500)
+    }
+  }, [loading])
+
   useEffect(() => {
     async function fetchData() {
-      const [paintingsRes, exhibitionsRes, settingsRes] = await Promise.all([
+      const [paintingsRes, exhibitionsRes, settingsRes, sectionsRes, logoRes] = await Promise.all([
         supabase.from('paintings').select('*').eq('available', true).order('created_at', { ascending: false }).limit(6),
         supabase.from('exhibitions').select('*').order('year', { ascending: false }).limit(4),
-        supabase.from('settings').select('*').single()
+        supabase.from('settings').select('*').single(),
+        supabase.from('page_sections').select('*').eq('page_name', 'home').order('section_order'),
+        supabase.from('page_sections').select('custom_data').eq('page_name', 'global').eq('section_key', 'logo').single()
       ])
       
       if (paintingsRes.data) setPaintings(paintingsRes.data)
       if (exhibitionsRes.data) setExhibitions(exhibitionsRes.data)
-      if (settingsRes.data) setSettings(settingsRes.data)
+      
+      // Merge settings with logo data
+      const logoData = logoRes.data?.custom_data || {}
+      if (settingsRes.data) {
+        setSettings({
+          ...settingsRes.data,
+          logo_main: logoData.logo_main,
+          logo_light: logoData.logo_light
+        })
+      }
+      
+      if (sectionsRes.data) setSections(sectionsRes.data)
+      setLoading(false)
     }
     fetchData()
 
@@ -79,6 +133,15 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Loading screen
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#13130d] flex items-center justify-center">
+        <div className="text-[#c9a050] text-xl font-['Cormorant_Garamond']">Chargement...</div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen">
       
@@ -86,7 +149,7 @@ export default function Home() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'bg-[#13130d] shadow-lg' : 'bg-[#13130d] md:bg-transparent'
       }`}>
-        <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-[1600px] mx-auto px-6 pt-8 pb-6 flex justify-between items-center">
           {/* Left nav */}
           <div className="hidden md:flex items-center gap-8">
             <Link href="/" className="text-[#c9a050] text-sm tracking-wider font-medium">
@@ -107,13 +170,11 @@ export default function Home() {
           {/* Logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2">
             <Image
-              src="/logo.png"
-              alt="J. Wattebled"
-              width={280}
-              height={80}
-              className={`h-14 md:h-16 w-auto object-contain transition-all ${
-                scrolled ? '' : 'md:brightness-0 md:invert'
-              }`}
+              src={settings?.logo_main || "/logo.png"}
+              alt={settings?.artist_name || "Logo"}
+              width={320}
+              height={100}
+              className="h-16 md:h-24 w-auto object-contain transition-all"
             />
           </Link>
           
@@ -161,61 +222,215 @@ export default function Home() {
       </nav>
 
       {/* Hero Section - Full Screen */}
-      <section className="relative h-screen flex items-center">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src={settings?.hero_image || "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1920&q=80"}
-            alt="Hero"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
+      {(() => {
+        const hero = getSection('hero')
+        return (
+          <section id="section-hero" className="relative h-screen flex items-center">
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src={hero?.image_url || settings?.hero_image || "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1920&q=80"}
+                alt="Hero"
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${hero?.image_overlay_opacity ?? (settings?.hero_overlay_opacity ?? 40) / 100})` }} />
+            </div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 max-w-[1600px] mx-auto px-6 w-full">
-          <div className="max-w-2xl">
-            <p className="text-[#e8e7dd] text-base md:text-lg font-['Cormorant_Garamond'] italic mb-4">
-              Paysages et scènes
-            </p>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cormorant_Garamond'] text-white leading-tight mb-8">
-              Je suis {settings?.artist_name || 'J. Wattebled'},<br/>
-              {settings?.artist_title || 'peintre impressionniste'}
-            </h1>
-            <Link 
-              href="/galerie"
-              className="inline-block px-10 py-4 bg-[#e8e7dd] text-[#13130d] text-sm tracking-wider hover:bg-[#c9a050] hover:text-white transition-colors"
-            >
-              APPRENDRE ENCORE PLUS
-            </Link>
-          </div>
-        </div>
-      </section>
+            {/* Hero Content */}
+            <div className="relative z-10 max-w-[1600px] mx-auto px-6 w-full">
+              <div className="flex items-center justify-between">
+                <div className="max-w-2xl">
+                  {hero?.subtitle && (
+                    <p className="text-base md:text-lg font-['Cormorant_Garamond'] italic mb-4" style={{ color: hero?.accent_color || '#e8e7dd' }}>
+                      {hero.subtitle}
+                    </p>
+                  )}
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cormorant_Garamond'] leading-tight mb-8" style={{ color: hero?.text_color || '#ffffff' }}>
+                    {(hero?.title || `Je suis ${settings?.artist_name || 'J. Wattebled'}, ${settings?.artist_title || 'peintre impressionniste'}`).split('|').map((line, i) => (
+                      <span key={i} className="block">{line.trim()}</span>
+                    ))}
+                  </h1>
+                  {hero?.button_text && (
+                    <Link 
+                      href={hero.button_link || '/galerie'}
+                      className="inline-block px-10 py-4 text-sm tracking-wider hover:opacity-80 transition-colors"
+                      style={{ backgroundColor: hero?.accent_color || '#e8e7dd', color: hero?.background_color || '#13130d' }}
+                    >
+                      {hero.button_text}
+                    </Link>
+                  )}
+                </div>
+                
+                {/* Portrait de l'artiste avec cadre */}
+                {hero?.custom_data?.portrait_url && (
+                  <div 
+                    className="hidden lg:block absolute z-20"
+                    style={{
+                      top: hero?.custom_data?.frame_pos_top || '50%',
+                      right: hero?.custom_data?.frame_pos_right || '5%',
+                      transform: `translateY(-50%) scale(${(hero?.custom_data?.frame_scale || 100) / 100})`,
+                    }}
+                  >
+                    <div 
+                      className="relative overflow-hidden"
+                      style={{
+                        width: hero?.custom_data?.frame_orientation === 'horizontal' ? '520px' : '380px',
+                        height: hero?.custom_data?.frame_orientation === 'horizontal' ? '380px' : '500px',
+                      }}
+                    >
+                      {/* Photo en arrière-plan - remplit tout */}
+                      <div 
+                        className="absolute z-0 overflow-hidden"
+                        style={{
+                          top: hero?.custom_data?.frame_inset || '8%',
+                          left: hero?.custom_data?.frame_inset || '8%',
+                          right: hero?.custom_data?.frame_inset || '8%',
+                          bottom: hero?.custom_data?.frame_inset || '8%',
+                        }}
+                      >
+                        <Image
+                          src={hero.custom_data.portrait_url}
+                          alt="Portrait de l'artiste"
+                          fill
+                          className="object-cover"
+                          style={{
+                            objectPosition: `${hero?.custom_data?.photo_pos_x || 50}% ${hero?.custom_data?.photo_pos_y || 20}%`
+                          }}
+                        />
+                      </div>
+                      {/* Cadre par-dessus */}
+                      {hero?.custom_data?.frame_url && (
+                        <Image
+                          src={hero.custom_data.frame_url}
+                          alt="Cadre"
+                          fill
+                          className="object-fill z-10 drop-shadow-2xl pointer-events-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      })()}
+
+      {/* About Section */}
+      {(() => {
+        const about = getSection('about')
+        if (!about) return null
+        return (
+          <section 
+            id="section-about"
+            className="py-24 px-6 relative overflow-hidden"
+            style={{ backgroundColor: about.background_color || '#f7f6ec' }}
+          >
+            {/* Decorative elements */}
+            <div className="absolute bottom-0 left-0 w-64 h-64 opacity-20">
+              <svg viewBox="0 0 200 200" className="w-full h-full" style={{ color: about.accent_color || '#c9a050' }}>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                <circle cx="100" cy="100" r="60" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                <circle cx="100" cy="100" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+              </svg>
+            </div>
+            <div className="absolute bottom-20 left-20 w-4 h-4 rounded-full opacity-40" style={{ backgroundColor: about.accent_color || '#c9a050' }} />
+            <div className="absolute bottom-40 right-1/3 w-2 h-2 rounded-full opacity-30" style={{ backgroundColor: about.accent_color || '#c9a050' }} />
+
+            <div className="max-w-[1400px] mx-auto">
+              <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+                {/* Left - Content */}
+                <div className="order-2 md:order-1">
+                  {about.subtitle && (
+                    <p 
+                      className="text-xs tracking-[0.3em] uppercase mb-6"
+                      style={{ color: about.text_color || '#13130d' }}
+                    >
+                      {about.subtitle}
+                    </p>
+                  )}
+                  <h2 
+                    className="text-4xl md:text-5xl lg:text-6xl font-['Cormorant_Garamond'] leading-tight mb-8"
+                    style={{ color: about.text_color || '#13130d' }}
+                  >
+                    {about.title || 'À propos de l\'artiste'}
+                  </h2>
+                  {about.description && (
+                    <p 
+                      className="text-lg leading-relaxed mb-10"
+                      style={{ color: `${about.text_color || '#13130d'}99` }}
+                    >
+                      {about.description}
+                    </p>
+                  )}
+                  {about.button_text && (
+                    <Link 
+                      href={about.button_link || '/contact'}
+                      className="inline-block px-10 py-5 text-sm tracking-wider transition-all hover:opacity-80"
+                      style={{ 
+                        backgroundColor: about.accent_color || '#13130d', 
+                        color: about.background_color || '#f7f6ec',
+                        borderRadius: '50px'
+                      }}
+                    >
+                      {about.button_text}
+                    </Link>
+                  )}
+                </div>
+
+                {/* Right - Image */}
+                <div className="order-1 md:order-2">
+                  {about.image_url && (
+                    <div className="relative">
+                      <div className="relative aspect-[4/5] overflow-hidden">
+                        <Image
+                          src={about.image_url}
+                          alt={about.title || 'À propos'}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      {/* Decorative border */}
+                      <div 
+                        className="absolute -top-4 -right-4 w-full h-full border-2 -z-10"
+                        style={{ borderColor: `${about.accent_color || '#c9a050'}40` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Collection Section */}
-      <section className="py-24 px-6 bg-[#f7f6ec]">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Section Header */}
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d]">
-              Collection
-            </h2>
-            <Link href="/galerie" className="hidden md:flex items-center gap-3 text-[#13130d] text-xs tracking-wider hover:text-[#c9a050] transition-colors">
-              VOIR TOUTE LA COLLECTION
-              <svg className="w-8 h-[1px] bg-current" />
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
-          
-          <div className="h-px bg-[#13130d]/20 mb-8" />
-          
-          <p className="text-[#6b6860] max-w-3xl mb-12">
-            {settings?.artist_bio || "Ma nouvelle collection de peintures comprend plus de 30 œuvres d'art de style impressionniste et est actuellement exposée dans la section d'art moderne du musée."}
-          </p>
+      {(() => {
+        const collection = getSection('featured')
+        return (
+          <section id="section-featured" className="py-24 px-6" style={{ backgroundColor: collection?.background_color || '#f7f6ec' }}>
+            <div className="max-w-[1400px] mx-auto">
+              {/* Section Header */}
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond']" style={{ color: collection?.text_color || '#13130d' }}>
+                  {collection?.title || 'Collection'}
+                </h2>
+                <Link href={collection?.button_link || '/galerie'} className="hidden md:flex items-center gap-3 text-xs tracking-wider hover:opacity-70 transition-colors" style={{ color: collection?.text_color || '#13130d' }}>
+                  {collection?.button_text || 'VOIR TOUTE LA COLLECTION'}
+                  <svg className="w-8 h-[1px] bg-current" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
+              
+              <div className="h-px mb-8" style={{ backgroundColor: `${collection?.text_color || '#13130d'}33` }} />
+              
+              <p className="max-w-3xl mb-12" style={{ color: `${collection?.text_color || '#13130d'}99` }}>
+                {collection?.description || settings?.artist_bio || "Ma nouvelle collection de peintures comprend plus de 30 œuvres d'art de style impressionniste."}
+              </p>
 
           {/* Masonry Grid */}
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
@@ -248,212 +463,239 @@ export default function Home() {
           {/* Load More Button */}
           <div className="text-center mt-12">
             <Link 
-              href="/galerie"
-              className="inline-block px-12 py-4 bg-[#c9a050] text-white text-sm tracking-wider rounded-full hover:bg-[#b8923f] transition-colors"
+              href={collection?.button_link || '/galerie'}
+              className="inline-block px-12 py-4 text-white text-sm tracking-wider rounded-full hover:opacity-80 transition-colors"
+              style={{ backgroundColor: collection?.accent_color || '#c9a050' }}
             >
               CHARGER PLUS
             </Link>
           </div>
-        </div>
-      </section>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Awards Section */}
-      <section className="grid md:grid-cols-2">
-        {/* Left - Image */}
-        <div className="relative h-[500px] md:h-auto">
-          <Image
-            src="https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=800&q=80"
-            alt="Récompenses"
-            fill
-            className="object-cover"
-          />
-        </div>
-        
-        {/* Right - Content */}
-        <div className="bg-[#13130d] py-16 md:py-24 px-8 md:px-16">
-          <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#c9a050] italic mb-6">
-            Mes récompenses
-          </h2>
-          <p className="text-[#e8e7dd]/80 mb-12">
-            Certaines de mes peintures ont été récompensées par des prix spéciaux de l'Académie des Beaux-Arts et exposées dans le monde entier.
-          </p>
+      {(() => {
+        const awards = getSection('awards')
+        if (!awards) return null
+        return (
+          <section id="section-awards" className="grid md:grid-cols-2">
+            {/* Left - Image */}
+            <div className="relative h-[500px] md:h-auto">
+              <Image
+                src={awards.image_url || "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=800&q=80"}
+                alt={awards.title || "Récompenses"}
+                fill
+                className="object-cover"
+              />
+            </div>
+            
+            {/* Right - Content */}
+            <div className="py-16 md:py-24 px-8 md:px-16" style={{ backgroundColor: awards.background_color || '#13130d' }}>
+              <h2 
+                className="text-4xl md:text-5xl font-['Cormorant_Garamond'] italic mb-6"
+                style={{ color: awards.accent_color || '#c9a050' }}
+              >
+                {awards.title || 'Mes récompenses'}
+              </h2>
+              <p className="mb-12" style={{ color: `${awards.text_color || '#e8e7dd'}cc` }}>
+                {awards.description || "Certaines de mes peintures ont été récompensées par des prix spéciaux."}
+              </p>
 
-          {/* Timeline */}
-          <div className="space-y-8">
-            {exhibitions.length > 0 ? exhibitions.map((expo) => (
-              <div key={expo.id} className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
-                <div>
-                  <p className="text-[#e8e7dd] font-medium">{expo.month}</p>
-                  <p className="text-[#e8e7dd]">{expo.year}</p>
-                </div>
-                <p className="text-[#e8e7dd]/80">
-                  {expo.title}, {expo.location}
-                </p>
+              {/* Timeline */}
+              <div className="space-y-8">
+                {exhibitions.length > 0 ? exhibitions.map((expo) => (
+                  <div key={expo.id} className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b" style={{ borderColor: `${awards.text_color || '#ffffff'}20` }}>
+                    <div>
+                      <p className="font-medium" style={{ color: awards.text_color || '#e8e7dd' }}>{expo.month}</p>
+                      <p style={{ color: awards.text_color || '#e8e7dd' }}>{expo.year}</p>
+                    </div>
+                    <p style={{ color: `${awards.text_color || '#e8e7dd'}cc` }}>
+                      {expo.title}, {expo.location}
+                    </p>
+                  </div>
+                )) : (
+                  <p style={{ color: `${awards.text_color || '#e8e7dd'}80` }}>Aucune exposition pour le moment.</p>
+                )}
               </div>
-            )) : (
-              <>
-                <div className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
-                  <div>
-                    <p className="text-[#e8e7dd] font-medium">Février</p>
-                    <p className="text-[#e8e7dd]">2024</p>
-                  </div>
-                  <p className="text-[#e8e7dd]/80">Voyage lumineux fantastique, galerie Modern Eden, San Francisco</p>
-                </div>
-                <div className="grid grid-cols-[100px_1fr] gap-6 pb-8 border-b border-white/10">
-                  <div>
-                    <p className="text-[#e8e7dd] font-medium">Septembre</p>
-                    <p className="text-[#e8e7dd]">2023</p>
-                  </div>
-                  <p className="text-[#e8e7dd]/80">Le Rêve de la Saint-Jean, Galerie Haven, North Port, New York</p>
-                </div>
-              </>
-            )}
-          </div>
 
-          <Link 
-            href="/expositions"
-            className="inline-flex items-center gap-4 mt-12 text-[#e8e7dd] text-xs tracking-wider hover:text-[#c9a050] transition-colors"
-          >
-            EN SAVOIR PLUS
-            <svg className="w-8 h-[1px] bg-current" />
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-        </div>
-      </section>
+              {awards.button_text && (
+                <Link 
+                  href={awards.button_link || "/expositions"}
+                  className="inline-flex items-center gap-4 mt-12 text-xs tracking-wider hover:opacity-70 transition-colors"
+                  style={{ color: awards.text_color || '#e8e7dd' }}
+                >
+                  {awards.button_text}
+                  <svg className="w-8 h-[1px] bg-current" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Shop Section */}
-      <section className="py-24 px-6 bg-[#f7f6ec]">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Section Header */}
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-4xl md:text-5xl font-['Cormorant_Garamond'] text-[#13130d]">
-              Ma boutique
-            </h2>
-            <Link href="/boutique" className="hidden md:flex items-center gap-3 text-[#13130d] text-xs tracking-wider hover:text-[#c9a050] transition-colors">
-              AFFICHER TOUS LES ARTICLES
-              <svg className="w-8 h-[1px] bg-current" />
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
-          
-          <div className="h-px bg-[#13130d]/20 mb-8" />
-          
-          <p className="text-[#6b6860] max-w-3xl mb-12">
-            Achetez des œuvres originales d'artistes indépendants directement sur le site et soutenez-moi dans ma passion. Payez en ligne et bénéficiez d'une garantie complète.
-          </p>
-
-          {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {paintings.slice(0, 6).map((painting) => (
-              <div key={painting.id} className="group">
-                <div className="relative aspect-square overflow-hidden bg-[#e8e7dd] mb-4">
-                  {painting.image_url ? (
-                    <Image
-                      src={painting.image_url}
-                      alt={painting.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#6b6860]">Image</div>
-                  )}
-                  
-                  {/* Discount Badge */}
-                  {painting.original_price && (
-                    <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-[#c9a050] flex items-center justify-center text-white text-xs font-medium">
-                      -20%
-                    </div>
-                  )}
-                  
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <Link 
-                      href={`/checkout/${painting.id}`}
-                      className="px-6 py-3 bg-transparent border border-white text-white text-xs tracking-wider hover:bg-white hover:text-[#13130d] transition-colors"
-                    >
-                      AJOUTER AU PANIER
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div className="flex items-center gap-2 text-xs text-[#6b6860] mb-2">
-                  <span className="text-[#c9a050]">ART</span>
-                  <span>,</span>
-                  <span className="text-[#c9a050]">LIVRE</span>
-                  <span>,</span>
-                  <span className="text-[#c9a050]">EXPOSITION</span>
-                </div>
-
-                <h3 className="text-xl font-['Cormorant_Garamond'] text-[#13130d] mb-2 group-hover:text-[#c9a050] transition-colors">
-                  {painting.title}
-                </h3>
-                
-                <div className="flex items-center gap-3">
-                  {painting.original_price && (
-                    <span className="text-[#6b6860] line-through">
-                      {painting.original_price.toFixed(2)} €
-                    </span>
-                  )}
-                  <span className="text-[#c9a050] text-lg">
-                    {painting.price?.toFixed(2)} €
-                  </span>
-                </div>
+      {(() => {
+        const shop = getSection('shop')
+        if (!shop) return null
+        return (
+          <section id="section-shop" className="py-24 px-6" style={{ backgroundColor: shop.background_color || '#f7f6ec' }}>
+            <div className="max-w-[1400px] mx-auto">
+              {/* Section Header */}
+              <div className="flex justify-between items-start mb-4">
+                <h2 
+                  className="text-4xl md:text-5xl font-['Cormorant_Garamond']"
+                  style={{ color: shop.text_color || '#13130d' }}
+                >
+                  {shop.title || 'Ma boutique'}
+                </h2>
+                <Link 
+                  href={shop.button_link || "/boutique"} 
+                  className="hidden md:flex items-center gap-3 text-xs tracking-wider hover:opacity-70 transition-colors"
+                  style={{ color: shop.text_color || '#13130d' }}
+                >
+                  {shop.button_text || 'AFFICHER TOUS LES ARTICLES'}
+                  <svg className="w-8 h-[1px] bg-current" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              
+              <div className="h-px mb-8" style={{ backgroundColor: `${shop.text_color || '#13130d'}20` }} />
+              
+              <p className="max-w-3xl mb-12" style={{ color: `${shop.text_color || '#13130d'}99` }}>
+                {shop.description || "Achetez des œuvres originales directement sur le site."}
+              </p>
+
+              {/* Products Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {paintings.slice(0, 6).map((painting) => (
+                  <div key={painting.id} className="group">
+                    <div className="relative aspect-square overflow-hidden bg-[#e8e7dd] mb-4">
+                      {painting.image_url ? (
+                        <Image
+                          src={painting.image_url}
+                          alt={painting.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#6b6860]">Image</div>
+                      )}
+                      
+                      {/* Discount Badge */}
+                      {painting.original_price && (
+                        <div 
+                          className="absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                          style={{ backgroundColor: shop.accent_color || '#c9a050' }}
+                        >
+                          -20%
+                        </div>
+                      )}
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <Link 
+                          href={`/checkout/${painting.id}`}
+                          className="px-6 py-3 bg-transparent border border-white text-white text-xs tracking-wider hover:bg-white hover:text-[#13130d] transition-colors"
+                        >
+                          AJOUTER AU PANIER
+                        </Link>
+                      </div>
+                    </div>
+
+                    <h3 
+                      className="text-xl font-['Cormorant_Garamond'] mb-2 group-hover:opacity-70 transition-colors"
+                      style={{ color: shop.text_color || '#13130d' }}
+                    >
+                      {painting.title}
+                    </h3>
+                    
+                    <div className="flex items-center gap-3">
+                      {painting.original_price && (
+                        <span className="line-through" style={{ color: `${shop.text_color || '#13130d'}60` }}>
+                          {painting.original_price.toFixed(2)} €
+                        </span>
+                      )}
+                      <span className="text-lg" style={{ color: shop.accent_color || '#c9a050' }}>
+                        {painting.price?.toFixed(2)} €
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Newsletter Section */}
-      <section className="relative py-32 px-6">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=1920&q=80"
-            alt="Newsletter"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50" />
-        </div>
+      {(() => {
+        const newsletter = getSection('newsletter')
+        if (!newsletter) return null
+        return (
+          <section id="section-newsletter" className="relative py-32 px-6">
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src={newsletter.image_url || "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?w=1920&q=80"}
+                alt={newsletter.title || "Newsletter"}
+                fill
+                className="object-cover"
+              />
+              <div 
+                className="absolute inset-0" 
+                style={{ backgroundColor: `rgba(0,0,0,${newsletter.image_overlay_opacity ?? 0.5})` }}
+              />
+            </div>
 
-        <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <h2 className="text-5xl md:text-6xl font-['Cormorant_Garamond'] text-white italic mb-6">
-            Bulletin
-          </h2>
-          <p className="text-[#e8e7dd]/90 font-['Cormorant_Garamond'] text-xl italic mb-10">
-            Recevez par courriel des mises à jour sur nos expositions, événements et plus encore.
-          </p>
-          
-          <form className="relative max-w-xl mx-auto mb-6">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Saisissez votre adresse e-mail"
-              className="w-full px-6 py-5 pr-16 bg-[#13130d] border border-white/20 text-white placeholder-white/50 focus:border-[#c9a050] focus:outline-none rounded-full"
-            />
-            <button
-              type="submit"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#c9a050] transition-colors"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </button>
-          </form>
+            <div className="relative z-10 max-w-2xl mx-auto text-center">
+              <h2 
+                className="text-5xl md:text-6xl font-['Cormorant_Garamond'] italic mb-6"
+                style={{ color: newsletter.text_color || '#ffffff' }}
+              >
+                {newsletter.title || 'Bulletin'}
+              </h2>
+              <p 
+                className="font-['Cormorant_Garamond'] text-xl italic mb-10"
+                style={{ color: `${newsletter.text_color || '#ffffff'}ee` }}
+              >
+                {newsletter.description || "Recevez par courriel des mises à jour sur nos expositions."}
+              </p>
+              
+              <form className="relative max-w-xl mx-auto mb-6">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={newsletter.subtitle || "Saisissez votre adresse e-mail"}
+                  className="w-full px-6 py-5 pr-16 bg-[#13130d] border border-white/20 text-white placeholder-white/50 focus:outline-none rounded-full"
+                  style={{ borderColor: `${newsletter.accent_color || '#c9a050'}40` }}
+                />
+                <button
+                  type="submit"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors hover:opacity-70"
+                  style={{ color: newsletter.text_color || '#ffffff' }}
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </button>
+              </form>
 
-          <label className="flex items-center justify-center gap-3 text-white/70 text-xs">
-            <input type="checkbox" className="rounded border-white/30" />
-            J'ACCEPTE QUE LES DONNÉES QUE J'AI SOUMISES SOIENT <span className="text-[#c9a050]">COLLECTÉES ET STOCKÉES</span>.
-          </label>
-        </div>
-      </section>
+              <label className="flex items-center justify-center gap-3 text-xs" style={{ color: `${newsletter.text_color || '#ffffff'}99` }}>
+                <input type="checkbox" className="rounded border-white/30" />
+                J'ACCEPTE QUE LES DONNÉES QUE J'AI SOUMISES SOIENT <span style={{ color: newsletter.accent_color || '#c9a050' }}>COLLECTÉES ET STOCKÉES</span>.
+              </label>
+            </div>
+          </section>
+        )
+      })()}
 
       <Footer settings={settings || undefined} />
 

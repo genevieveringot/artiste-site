@@ -17,10 +17,11 @@ interface Painting {
   description: string | null
 }
 
-const categories = ['paysage', 'portrait', 'nature-morte', 'abstrait', 'autre']
+const defaultCategories = ['PAYSAGES', 'MARINES', 'PORTRAITS', 'FLEURS', 'AUTRE']
 
 export default function PaintingsAdmin() {
   const [paintings, setPaintings] = useState<Painting[]>([])
+  const [categories, setCategories] = useState<string[]>(defaultCategories)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPainting, setEditingPainting] = useState<Painting | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -46,11 +47,15 @@ export default function PaintingsAdmin() {
   }, [searchParams])
 
   async function fetchPaintings() {
-    const { data } = await supabase
-      .from('paintings')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setPaintings(data)
+    const [paintingsRes, categoriesRes] = await Promise.all([
+      supabase.from('paintings').select('*').order('created_at', { ascending: false }),
+      supabase.from('page_sections').select('custom_data').eq('page_name', 'galerie').eq('section_key', 'gallery').single()
+    ])
+    if (paintingsRes.data) setPaintings(paintingsRes.data)
+    const customCats = categoriesRes.data?.custom_data?.categories
+    if (customCats && Array.isArray(customCats) && customCats.length > 0) {
+      setCategories(customCats)
+    }
   }
 
   function openNewModal() {
@@ -61,7 +66,7 @@ export default function PaintingsAdmin() {
       price: '',
       width: '',
       height: '',
-      category: 'paysage',
+      category: categories[0] || 'PAYSAGES',
       available: true,
       description: ''
     })
@@ -223,7 +228,7 @@ export default function PaintingsAdmin() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                   required
                 />
               </div>
@@ -239,8 +244,18 @@ export default function PaintingsAdmin() {
                 />
                 {isUploading && <p className="text-sm text-[var(--accent)] mt-1">Upload en cours...</p>}
                 {formData.image_url && (
-                  <div className="mt-2 relative w-32 h-32">
-                    <Image src={formData.image_url} alt="Preview" fill className="object-cover" />
+                  <div className="mt-2">
+                    <div className="relative w-32 h-32 group">
+                      <Image src={formData.image_url} alt="Preview" fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_url: '' })}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                        title="Supprimer l'image"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -252,7 +267,7 @@ export default function PaintingsAdmin() {
                     type="number"
                     value={formData.width}
                     onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                     required
                   />
                 </div>
@@ -262,7 +277,7 @@ export default function PaintingsAdmin() {
                     type="number"
                     value={formData.height}
                     onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                    className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                    className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                     required
                   />
                 </div>
@@ -275,7 +290,7 @@ export default function PaintingsAdmin() {
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 />
               </div>
 
@@ -284,7 +299,7 @@ export default function PaintingsAdmin() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -298,7 +313,7 @@ export default function PaintingsAdmin() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 bg-[var(--background)] border border-[var(--border)] text-white focus:border-[var(--accent)] focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
                 />
               </div>
 

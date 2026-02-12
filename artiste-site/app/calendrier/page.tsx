@@ -37,13 +37,15 @@ export default function CalendrierPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const [expoRes, settingsRes] = await Promise.all([
+      const [expoRes, settingsRes, logoRes] = await Promise.all([
         supabase.from('exhibitions').select('*'),
-        supabase.from('settings').select('*').single()
+        supabase.from('settings').select('*').single(),
+        supabase.from('page_sections').select('custom_data').eq('page_name', 'global').eq('section_key', 'logo').single()
       ])
+      const logoData = logoRes.data?.custom_data || {}
       
       if (expoRes.data) setExhibitions(expoRes.data)
-      if (settingsRes.data) setSettings(settingsRes.data)
+      if (settingsRes.data) setSettings({ ...settingsRes.data, ...logoData })
     }
     fetchData()
 
@@ -113,7 +115,7 @@ export default function CalendrierPage() {
             </div>
             
             <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Image src="/logo.png" alt="J. Wattebled" width={200} height={60} className="h-10 md:h-12 w-auto object-contain" />
+              <Image src={settings?.logo_main || "/logo.png"} alt={settings?.artist_name || "Logo"} width={320} height={100} className="h-16 md:h-20 w-auto object-contain" />
             </Link>
             
             <div className="hidden md:flex items-center gap-8">

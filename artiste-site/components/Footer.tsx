@@ -10,6 +10,9 @@ interface FooterLink {
 
 interface FooterProps {
   settings?: {
+    logo_main?: string
+    logo_light?: string
+    artist_name?: string
     footer_description?: string
     footer_address?: string
     footer_phone?: string
@@ -46,12 +49,12 @@ export default function Footer({ settings }: FooterProps) {
   return (
     <footer className="py-20 px-6 bg-[#13130d]">
       <div className="max-w-[1400px] mx-auto">
-        <div className="grid md:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-16">
           {/* Logo & Info */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <Image
-              src="/logo.png"
-              alt="J. Wattebled"
+              src={settings?.logo_main || "/logo.png"}
+              alt={settings?.artist_name || "Logo"}
               width={280}
               height={80}
               className="h-20 w-auto object-contain mb-8"
