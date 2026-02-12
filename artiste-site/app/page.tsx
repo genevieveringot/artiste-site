@@ -1,10 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Footer from '@/components/Footer'
+import { useI18n } from '@/lib/i18n/context'
+import { useAuth } from '@/lib/auth/context'
+
+// Drapeaux SVG
+const FlagFR = () => (
+  <svg viewBox="0 0 36 24" className="w-5 h-4 rounded-sm overflow-hidden">
+    <rect width="12" height="24" fill="#002395"/>
+    <rect x="12" width="12" height="24" fill="#fff"/>
+    <rect x="24" width="12" height="24" fill="#ED2939"/>
+  </svg>
+)
+
+const FlagEN = () => (
+  <svg viewBox="0 0 36 24" className="w-5 h-4 rounded-sm overflow-hidden">
+    <rect width="36" height="24" fill="#012169"/>
+    <path d="M0,0 L36,24 M36,0 L0,24" stroke="#fff" strokeWidth="4"/>
+    <path d="M0,0 L36,24 M36,0 L0,24" stroke="#C8102E" strokeWidth="2"/>
+    <path d="M18,0 V24 M0,12 H36" stroke="#fff" strokeWidth="6"/>
+    <path d="M18,0 V24 M0,12 H36" stroke="#C8102E" strokeWidth="4"/>
+  </svg>
+)
 
 interface Painting {
   id: string
@@ -73,7 +94,6 @@ interface PageSection {
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [expoDropdown, setExpoDropdown] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [paintings, setPaintings] = useState<Painting[]>([])
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
@@ -81,8 +101,14 @@ export default function Home() {
   const [sections, setSections] = useState<PageSection[]>([])
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
+  const [langDropdown, setLangDropdown] = useState(false)
+  const [userDropdown, setUserDropdown] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
+  const userRef = useRef<HTMLDivElement>(null)
   
   const supabase = createClient()
+  const { locale, setLocale, t } = useI18n()
+  const { user, signOut } = useAuth()
 
   // Helper to get a section by key
   const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
@@ -130,7 +156,18 @@ export default function Home() {
 
     const handleScroll = () => setScrolled(window.scrollY > 100)
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    
+    // Fermer dropdowns quand on clique ailleurs
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangDropdown(false)
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setUserDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
   // Loading screen
@@ -151,20 +188,22 @@ export default function Home() {
       }`}>
         <div className="max-w-[1600px] mx-auto px-6 pt-8 pb-6 flex justify-between items-center">
           {/* Left nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-[#c9a050] text-sm tracking-wider font-medium">
-              MAISON
+              {t.nav.home}
             </Link>
+            
+            <Link href="/artiste" className={`text-sm tracking-wider transition-colors ${
+              scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
+            }`}>{t.nav.artist}</Link>
             
             <Link href="/expositions" className={`text-sm tracking-wider transition-colors ${
               scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
-            }`}>EXPOSITIONS</Link>
+            }`}>{t.nav.exhibitions}</Link>
 
             <Link href="/galerie" className={`text-sm tracking-wider transition-colors ${
               scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
-            }`}>
-              COLLECTIONS
-            </Link>
+            }`}>{t.nav.collections}</Link>
           </div>
           
           {/* Logo */}
@@ -179,43 +218,155 @@ export default function Home() {
           </Link>
           
           {/* Right nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link href="/boutique" className={`text-sm tracking-wider transition-colors ${
               scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
-            }`}>
-              BOUTIQUE
-            </Link>
+            }`}>{t.nav.shop}</Link>
             <Link href="/contact" className={`text-sm tracking-wider transition-colors ${
               scrolled ? 'text-[#f7f6ec] hover:text-[#c9a050]' : 'text-white hover:text-[#c9a050]'
-            }`}>
-              CONTACTS
+            }`}>{t.nav.contact}</Link>
+
+            {/* Séparateur */}
+            <div className="w-px h-5 bg-white/20" />
+
+            {/* Language selector */}
+            <div ref={langRef} className="relative">
+              <button 
+                onClick={() => setLangDropdown(!langDropdown)}
+                className="flex items-center gap-1.5 text-white hover:text-[#c9a050] transition-colors"
+              >
+                {locale === 'fr' ? <FlagFR /> : <FlagEN />}
+                <svg className={`w-3 h-3 transition-transform ${langDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {langDropdown && (
+                <div className="absolute top-full right-0 mt-2 bg-[#13130d] border border-white/10 shadow-lg min-w-[120px]">
+                  <button
+                    onClick={() => { setLocale('fr'); setLangDropdown(false) }}
+                    className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 ${locale === 'fr' ? 'text-[#c9a050]' : 'text-white'}`}
+                  >
+                    <FlagFR /> Français
+                  </button>
+                  <button
+                    onClick={() => { setLocale('en'); setLangDropdown(false) }}
+                    className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 ${locale === 'en' ? 'text-[#c9a050]' : 'text-white'}`}
+                  >
+                    <FlagEN /> English
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* User account */}
+            <div ref={userRef} className="relative">
+              <button 
+                onClick={() => setUserDropdown(!userDropdown)}
+                className="text-white hover:text-[#c9a050] transition-colors"
+                title={t.nav.account}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              </button>
+              
+              {userDropdown && (
+                <div className="absolute top-full right-0 mt-2 bg-[#13130d] border border-white/10 shadow-lg min-w-[160px]">
+                  {user ? (
+                    <>
+                      <div className="px-4 py-2 border-b border-white/10">
+                        <p className="text-xs text-white/60">{locale === 'fr' ? 'Connecté' : 'Logged in'}</p>
+                        <p className="text-sm text-white truncate">{user.email}</p>
+                      </div>
+                      <Link href="/compte" onClick={() => setUserDropdown(false)} className="block px-4 py-2 text-sm text-white hover:bg-white/5">
+                        {t.nav.account}
+                      </Link>
+                      <button onClick={() => { signOut(); setUserDropdown(false) }} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5">
+                        {t.nav.logout}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/auth/login" onClick={() => setUserDropdown(false)} className="block px-4 py-2 text-sm text-white hover:bg-white/5">
+                        {t.nav.login}
+                      </Link>
+                      <Link href="/auth/register" onClick={() => setUserDropdown(false)} className="block px-4 py-2 text-sm text-[#c9a050] hover:bg-white/5">
+                        {t.nav.register}
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Cart */}
+            <Link href="/panier" className="text-white hover:text-[#c9a050] transition-colors" title={t.nav.cart}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
             </Link>
           </div>
 
-          {/* Mobile menu button */}
-          <button 
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden ml-auto p-2 text-[#f7f6ec]"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          {/* Mobile: icons + burger */}
+          <div className="md:hidden ml-auto flex items-center gap-4">
+            {/* Language mobile */}
+            <button onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')} className="text-white">
+              {locale === 'fr' ? <FlagFR /> : <FlagEN />}
+            </button>
+
+            {/* User mobile */}
+            <Link href={user ? "/compte" : "/auth/login"} className="text-white">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </Link>
+
+            {/* Cart mobile */}
+            <Link href="/panier" className="text-white">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+            </Link>
+
+            {/* Burger menu */}
+            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 text-white">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden bg-[#13130d] border-t border-white/10">
             <div className="px-6 py-4 flex flex-col">
-              <Link href="/" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#c9a050]">MAISON</Link>
-              <Link href="/expositions" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">EXPOSITIONS</Link>
-              <Link href="/galerie" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">COLLECTIONS</Link>
-              <Link href="/boutique" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#f7f6ec]">BOUTIQUE</Link>
-              <Link href="/contact" onClick={() => setMenuOpen(false)} className="py-3 text-[#f7f6ec]">CONTACTS</Link>
+              <Link href="/" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-[#c9a050]">{t.nav.home}</Link>
+              <Link href="/artiste" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-white">{t.nav.artist}</Link>
+              <Link href="/expositions" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-white">{t.nav.exhibitions}</Link>
+              <Link href="/galerie" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-white">{t.nav.collections}</Link>
+              <Link href="/boutique" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-white">{t.nav.shop}</Link>
+              <Link href="/contact" onClick={() => setMenuOpen(false)} className="py-3 border-b border-white/10 text-white">{t.nav.contact}</Link>
+              
+              <div className="pt-4 border-t border-white/10 mt-2">
+                {user ? (
+                  <>
+                    <p className="text-xs text-white/60 mb-2">{user.email}</p>
+                    <Link href="/compte" onClick={() => setMenuOpen(false)} className="block py-2 text-white">{t.nav.account}</Link>
+                    <button onClick={() => { signOut(); setMenuOpen(false) }} className="py-2 text-white">{t.nav.logout}</button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="block py-2 text-white">{t.nav.login}</Link>
+                    <Link href="/auth/register" onClick={() => setMenuOpen(false)} className="block py-2 text-[#c9a050]">{t.nav.register}</Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
