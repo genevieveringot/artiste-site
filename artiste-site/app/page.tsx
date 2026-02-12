@@ -276,20 +276,20 @@ export default function Home() {
                     {hero?.custom_data?.frame_url ? (
                       /* Avec cadre */
                       <div 
-                        className="relative overflow-hidden"
+                        className="relative drop-shadow-2xl"
                         style={{
                           width: hero?.custom_data?.frame_orientation === 'horizontal' ? '520px' : '380px',
                           height: hero?.custom_data?.frame_orientation === 'horizontal' ? '380px' : '500px',
                         }}
                       >
-                        {/* Photo en arrière-plan */}
+                        {/* Photo en arrière-plan - remplit tout */}
                         <div 
-                          className="absolute z-0 overflow-hidden"
+                          className="absolute overflow-hidden"
                           style={{
-                            top: hero?.custom_data?.frame_inset || '8%',
+                            top: hero?.custom_data?.frame_inset || '11%',
                             left: hero?.custom_data?.frame_inset || '8%',
                             right: hero?.custom_data?.frame_inset || '8%',
-                            bottom: hero?.custom_data?.frame_inset || '8%',
+                            bottom: hero?.custom_data?.frame_inset || '11%',
                           }}
                         >
                           <Image
@@ -303,12 +303,13 @@ export default function Home() {
                             }}
                           />
                         </div>
-                        {/* Cadre par-dessus */}
+                        {/* Cadre par-dessus avec multiply pour rendre le blanc transparent */}
                         <Image
                           src={hero.custom_data.frame_url}
                           alt="Cadre"
                           fill
-                          className="object-fill z-10 drop-shadow-2xl pointer-events-none"
+                          className="object-contain pointer-events-none"
+                          style={{ mixBlendMode: 'multiply' }}
                         />
                       </div>
                     ) : (
