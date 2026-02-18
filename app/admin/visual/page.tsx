@@ -676,10 +676,32 @@ export default function VisualEditor() {
             </div>
 
             {editingSection.custom_data?.portrait_url && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="relative w-24 h-32 bg-gray-100 rounded overflow-hidden">
                   <img src={editingSection.custom_data.portrait_url} alt="Portrait" className="w-full h-full object-cover" />
                 </div>
+                
+                {/* Format de l'image */}
+                <div>
+                  <label className="block text-xs text-[#6b6860] mb-2">Format d'affichage</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, image_format: 'portrait' } })}
+                      className={`flex-1 py-2 text-xs border rounded ${(editingSection.custom_data?.image_format || 'portrait') === 'portrait' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
+                    >
+                      📷 Portrait
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, image_format: 'paysage' } })}
+                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.image_format === 'paysage' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
+                    >
+                      🖼️ Paysage
+                    </button>
+                  </div>
+                </div>
+                
                 <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_url: '' } })} className="text-xs text-red-500 hover:text-red-700">🗑️ Supprimer</button>
               </div>
             )}

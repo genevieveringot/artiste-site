@@ -414,7 +414,7 @@ export default function Home() {
                   )}
                 </div>
                 
-                {/* Portrait de l'artiste */}
+                {/* Image de l'artiste */}
                 {hero?.custom_data?.portrait_url && (
                   <div 
                     className="hidden lg:block absolute z-20"
@@ -427,15 +427,15 @@ export default function Home() {
                     <div 
                       className="relative overflow-hidden shadow-2xl"
                       style={{
-                        width: '320px',
-                        height: '420px',
+                        width: hero?.custom_data?.image_format === 'paysage' ? '480px' : '320px',
+                        height: hero?.custom_data?.image_format === 'paysage' ? '320px' : '420px',
                       }}
                     >
                       <Image
                         src={hero.custom_data.portrait_url}
-                        alt="Portrait de l'artiste"
+                        alt="Image de l'artiste"
                         fill
-                        className="object-cover object-top"
+                        className="object-cover object-center"
                       />
                     </div>
                   </div>
