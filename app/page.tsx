@@ -427,11 +427,8 @@ export default function Home() {
                     <div 
                       className="relative overflow-hidden shadow-2xl"
                       style={{
-                        width: `${hero?.custom_data?.portrait_size || 300}px`,
-                        height: hero?.custom_data?.portrait_shape === 'portrait' 
-                          ? `${(hero?.custom_data?.portrait_size || 300) * 1.3}px`
-                          : `${hero?.custom_data?.portrait_size || 300}px`,
-                        borderRadius: hero?.custom_data?.portrait_shape === 'rounded' ? '50%' : '0',
+                        width: '320px',
+                        height: '420px',
                       }}
                     >
                       <Image

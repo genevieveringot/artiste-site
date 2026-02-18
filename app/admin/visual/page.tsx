@@ -691,54 +691,18 @@ export default function VisualEditor() {
                 
                 {/* Zoom */}
                 <div>
-                  <label className="block text-xs text-[#6b6860] mb-1">🔍 Zoom: {editingSection.custom_data?.photo_scale || 100}%</label>
+                  <label className="block text-xs text-[#6b6860] mb-1">🔍 Agrandissement: {editingSection.custom_data?.photo_scale || 100}%</label>
                   <input type="range" min="50" max="200" value={editingSection.custom_data?.photo_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_scale: parseInt(e.target.value) } })} className="w-full" />
                 </div>
 
-                {/* Taille du conteneur */}
+                {/* Décalage */}
                 <div>
-                  <label className="block text-xs text-[#6b6860] mb-1">📏 Taille: {editingSection.custom_data?.portrait_size || 300}px</label>
-                  <input type="range" min="150" max="500" value={editingSection.custom_data?.portrait_size || 300} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_size: parseInt(e.target.value) } })} className="w-full" />
+                  <label className="block text-xs text-[#6b6860] mb-1">↔️ Décalage horizontal: {editingSection.custom_data?.photo_pos_x || 50}%</label>
+                  <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_x || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_x: parseInt(e.target.value) } })} className="w-full" />
                 </div>
-
-                {/* Position */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-[#6b6860]">Position X: {editingSection.custom_data?.photo_pos_x || 50}%</label>
-                    <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_x || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_x: parseInt(e.target.value) } })} className="w-full" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#6b6860]">Position Y: {editingSection.custom_data?.photo_pos_y || 50}%</label>
-                    <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_y || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_y: parseInt(e.target.value) } })} className="w-full" />
-                  </div>
-                </div>
-
-                {/* Forme */}
                 <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-2">🔲 Forme</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'square' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${(editingSection.custom_data?.portrait_shape || 'square') === 'square' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      ⬜ Carré
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'rounded' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.portrait_shape === 'rounded' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      🔵 Arrondi
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_shape: 'portrait' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.portrait_shape === 'portrait' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      📷 Portrait
-                    </button>
-                  </div>
+                  <label className="block text-xs text-[#6b6860] mb-1">↕️ Décalage vertical: {editingSection.custom_data?.photo_pos_y || 50}%</label>
+                  <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_y || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_y: parseInt(e.target.value) } })} className="w-full" />
                 </div>
               </div>
             )}
