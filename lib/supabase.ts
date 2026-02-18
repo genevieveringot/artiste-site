@@ -3,14 +3,16 @@ import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Singleton pour éviter les multiples instances
-let supabaseInstance: SupabaseClient | null = null
+// Vrai singleton global pour éviter les multiples instances GoTrueClient
+const globalForSupabase = globalThis as typeof globalThis & {
+  supabaseClient?: SupabaseClient
+}
 
 export function createClient() {
-  if (!supabaseInstance) {
-    supabaseInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+  if (!globalForSupabase.supabaseClient) {
+    globalForSupabase.supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey)
   }
-  return supabaseInstance
+  return globalForSupabase.supabaseClient
 }
 
 export const supabase = createClient()
