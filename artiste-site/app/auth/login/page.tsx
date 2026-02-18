@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useI18n } from '@/lib/i18n/context'
 import { useAuth } from '@/lib/auth/context'
 
-function LoginForm() {
+function LoginFormContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -41,6 +41,58 @@ function LoginForm() {
   }
 
   return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm text-[#6b6860] mb-2">{t.auth.email}</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full px-4 py-3 border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
+          placeholder="votre@email.com"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm text-[#6b6860] mb-2">{t.auth.password}</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full px-4 py-3 border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
+          placeholder="••••••••"
+        />
+      </div>
+
+      <div className="text-right">
+        <Link href="/auth/forgot-password" className="text-sm text-[#c9a050] hover:underline">
+          {t.auth.forgotPassword}
+        </Link>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 bg-[#c9a050] text-white font-medium hover:bg-[#b8923f] disabled:opacity-50 transition-colors"
+      >
+        {loading ? t.common.loading : t.auth.login}
+      </button>
+    </form>
+  )
+}
+
+function LoginForm() {
+  const { t } = useI18n()
+  
+  return (
     <div className="min-h-screen bg-[#f7f6ec] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="bg-white border border-[#e8e7dd] p-8">
@@ -51,51 +103,9 @@ function LoginForm() {
             <h2 className="text-xl font-medium text-[#13130d]">{t.nav.login}</h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm text-[#6b6860] mb-2">{t.auth.email}</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
-                placeholder="votre@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-[#6b6860] mb-2">{t.auth.password}</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="text-right">
-              <Link href="/auth/forgot-password" className="text-sm text-[#c9a050] hover:underline">
-                {t.auth.forgotPassword}
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-[#c9a050] text-white font-medium hover:bg-[#b8923f] disabled:opacity-50 transition-colors"
-            >
-              {loading ? t.common.loading : t.auth.login}
-            </button>
-          </form>
+          <Suspense fallback={<div className="text-center text-[#6b6860]">Chargement...</div>}>
+            <LoginFormContent />
+          </Suspense>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-[#6b6860]">
@@ -118,13 +128,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f7f6ec] flex items-center justify-center">
-        <div className="text-[#c9a050]">Chargement...</div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
-  )
+  return <LoginForm />
 }
