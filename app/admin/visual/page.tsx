@@ -684,29 +684,6 @@ export default function VisualEditor() {
               </div>
             )}
 
-            {/* Ajustement de l'image du portrait */}
-            {editingSection.custom_data?.portrait_url && (
-              <div className="pt-2 border-t border-[#e8e7dd] space-y-3">
-                <label className="block text-xs text-[#6b6860] font-medium">📷 Ajustement de l'image</label>
-                
-                {/* Zoom */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] mb-1">🔍 Agrandissement: {editingSection.custom_data?.photo_scale || 100}%</label>
-                  <input type="range" min="50" max="200" value={editingSection.custom_data?.photo_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_scale: parseInt(e.target.value) } })} className="w-full" />
-                </div>
-
-                {/* Décalage */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] mb-1">↔️ Décalage horizontal: {editingSection.custom_data?.photo_pos_x || 50}%</label>
-                  <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_x || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_x: parseInt(e.target.value) } })} className="w-full" />
-                </div>
-                <div>
-                  <label className="block text-xs text-[#6b6860] mb-1">↕️ Décalage vertical: {editingSection.custom_data?.photo_pos_y || 50}%</label>
-                  <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_y || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_y: parseInt(e.target.value) } })} className="w-full" />
-                </div>
-              </div>
-            )}
-
           </div>
         )}
 

@@ -435,11 +435,7 @@ export default function Home() {
                         src={hero.custom_data.portrait_url}
                         alt="Portrait de l'artiste"
                         fill
-                        className="object-cover"
-                        style={{
-                          objectPosition: `${hero?.custom_data?.photo_pos_x || 50}% ${hero?.custom_data?.photo_pos_y || 50}%`,
-                          transform: `scale(${(hero?.custom_data?.photo_scale || 100) / 100})`,
-                        }}
+                        className="object-cover object-top"
                       />
                     </div>
                   </div>
