@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Footer from '@/components/Footer'
+import Header from '@/components/Header'
 
 interface PageSection {
   id: string
@@ -97,63 +98,7 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f6ec]">
-      {/* Fixed Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#13130d]">
-        {/* Top bar */}
-        {!scrolled && (
-          <div className="bg-[#13130d] text-white/80 text-xs">
-            <div className="max-w-[1600px] mx-auto px-6 py-2 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" strokeWidth="1.5"/>
-                  <path strokeLinecap="round" strokeWidth="1.5" d="M12 6v6l4 2"/>
-                </svg>
-                <span>L'ATELIER EST OUVERT DU LUNDI AU VENDREDI DE 9H À 18H</span>
-              </div>
-              <span className="hidden md:block">Nord de la France</span>
-            </div>
-          </div>
-        )}
-
-        <div className="bg-[#13130d]">
-          <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-[#f7f6ec] text-xs tracking-wider hover:text-[#c9a050]">MAISON</Link>
-              <Link href="/expositions" className="text-[#f7f6ec] text-xs tracking-wider hover:text-[#c9a050]">EXPOSITIONS</Link>
-              <Link href="/galerie" className="text-[#f7f6ec] text-xs tracking-wider hover:text-[#c9a050]">COLLECTIONS</Link>
-            </div>
-            
-            <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <Image src={settings?.logo_main || "/logo.png"} alt={settings?.artist_name || "Logo"} width={320} height={100} className="h-16 md:h-20 w-auto object-contain" />
-            </Link>
-            
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/boutique" className="text-[#f7f6ec] text-xs tracking-wider hover:text-[#c9a050]">BOUTIQUE</Link>
-              <Link href="/contact" className="text-[#c9a050] text-xs tracking-wider font-medium">CONTACTS</Link>
-            </div>
-
-            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden ml-auto p-2 text-[#f7f6ec]">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="md:hidden bg-[#13130d] border-t border-white/10">
-            <div className="px-6 py-4 space-y-4">
-              <Link href="/" onClick={() => setMenuOpen(false)} className="block text-[#f7f6ec] text-sm">MAISON</Link>
-              <Link href="/expositions" onClick={() => setMenuOpen(false)} className="block text-[#f7f6ec] text-sm">EXPOSITIONS</Link>
-              <Link href="/galerie" onClick={() => setMenuOpen(false)} className="block text-[#f7f6ec] text-sm">COLLECTIONS</Link>
-              <Link href="/boutique" onClick={() => setMenuOpen(false)} className="block text-[#f7f6ec] text-sm">BOUTIQUE</Link>
-              <Link href="/contact" onClick={() => setMenuOpen(false)} className="block text-[#c9a050] text-sm font-medium">CONTACTS</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Header currentPage="contact" />
 
       {/* Hero */}
       <section id="section-hero" className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
