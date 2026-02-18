@@ -8,8 +8,8 @@ import { useAuth } from '@/lib/auth/context'
 
 interface HeaderProps {
   currentPage?: string
-  backgroundImage: string
-  title: string
+  backgroundImage?: string
+  title?: string
   breadcrumb?: string
 }
 
@@ -309,28 +309,30 @@ export default function Header({ currentPage, backgroundImage, title, breadcrumb
         )}
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
-        <div className="absolute inset-0">
-          <Image
-            src={backgroundImage}
-            alt={title}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30" />
-        </div>
+      {/* Hero Section - only render if backgroundImage and title provided */}
+      {backgroundImage && title && (
+        <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center">
+          <div className="absolute inset-0">
+            <Image
+              src={backgroundImage}
+              alt={title}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
 
-        <div className="relative z-10 text-center px-6">
-          <h1 className="text-4xl md:text-6xl font-['Cormorant_Garamond'] text-[#f7f6ec] mb-4">{title}</h1>
-          {breadcrumb && (
-            <p className="text-[#f7f6ec]/80 font-['Cormorant_Garamond'] text-lg">
-              {t.nav.home} / <span className="text-[#c9a050]">{breadcrumb}</span>
-            </p>
-          )}
-        </div>
-      </section>
+          <div className="relative z-10 text-center px-6">
+            <h1 className="text-4xl md:text-6xl font-['Cormorant_Garamond'] text-[#f7f6ec] mb-4">{title}</h1>
+            {breadcrumb && (
+              <p className="text-[#f7f6ec]/80 font-['Cormorant_Garamond'] text-lg">
+                {t.nav.home} / <span className="text-[#c9a050]">{breadcrumb}</span>
+              </p>
+            )}
+          </div>
+        </section>
+      )}
     </>
   )
 }

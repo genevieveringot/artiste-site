@@ -684,72 +684,10 @@ export default function VisualEditor() {
               </div>
             )}
 
-            {/* Sélection du cadre */}
-            <div className="pt-2 border-t border-[#e8e7dd]">
-              <label className="block text-xs text-[#6b6860] font-medium mb-2">🖼️ Cadre</label>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                {[
-                  'https://okwbohcjgtbunitggcta.supabase.co/storage/v1/object/public/artiste-images/frames/cadre-baroque-1.jpg',
-                  'https://okwbohcjgtbunitggcta.supabase.co/storage/v1/object/public/artiste-images/frames/cadre-baroque-2.jpg',
-                  'https://okwbohcjgtbunitggcta.supabase.co/storage/v1/object/public/artiste-images/frames/cadre-baroque-3.jpg',
-                  'https://okwbohcjgtbunitggcta.supabase.co/storage/v1/object/public/artiste-images/frames/cadre-baroque-4.jpg',
-                  'https://okwbohcjgtbunitggcta.supabase.co/storage/v1/object/public/artiste-images/frames/cadre-baroque-5.jpg',
-                ].map((frameUrl, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: frameUrl } })}
-                    className={`relative w-full aspect-[4/5] border-2 rounded overflow-hidden ${editingSection.custom_data?.frame_url === frameUrl ? 'border-[#c9a050]' : 'border-transparent'}`}
-                  >
-                    <img src={frameUrl} alt={`Cadre ${i+1}`} className="w-full h-full object-contain" />
-                  </button>
-                ))}
-              </div>
-              
-              <div>
-                <label className="block text-xs text-[#6b6860] mb-1">Ou uploader un cadre personnalisé</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    const fileExt = file.name.split('.').pop()
-                    const fileName = `frames/custom-${Date.now()}.${fileExt}`
-                    const { error } = await supabase.storage.from('artiste-images').upload(fileName, file)
-                    if (error) { alert('Erreur: ' + error.message); return }
-                    const { data: { publicUrl } } = supabase.storage.from('artiste-images').getPublicUrl(fileName)
-                    setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: publicUrl } })
-                  }}
-                  className="text-xs text-[#6b6860]"
-                />
-              </div>
-
-              {editingSection.custom_data?.frame_url && (
-                <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: '' } })} className="text-xs text-red-500 hover:text-red-700 mt-2">🗑️ Retirer le cadre</button>
-              )}
-
-              {/* Option sans cadre */}
-              <div className="flex items-center gap-2 mt-3">
-                <input 
-                  type="checkbox" 
-                  id="no-frame" 
-                  checked={!editingSection.custom_data?.frame_url}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_url: '' } })
-                    }
-                  }}
-                  className="rounded"
-                />
-                <label htmlFor="no-frame" className="text-xs text-[#6b6860]">Afficher sans cadre</label>
-              </div>
-            </div>
-
-            {/* Ajustement de l'image SANS cadre */}
-            {editingSection.custom_data?.portrait_url && !editingSection.custom_data?.frame_url && (
+            {/* Ajustement de l'image du portrait */}
+            {editingSection.custom_data?.portrait_url && (
               <div className="pt-2 border-t border-[#e8e7dd] space-y-3">
-                <label className="block text-xs text-[#6b6860] font-medium">📷 Ajustement de l'image (sans cadre)</label>
+                <label className="block text-xs text-[#6b6860] font-medium">📷 Ajustement de l'image</label>
                 
                 {/* Zoom */}
                 <div>
@@ -805,82 +743,6 @@ export default function VisualEditor() {
               </div>
             )}
 
-            {/* Ajustement du cadre */}
-            {editingSection.custom_data?.frame_url && (
-              <div className="pt-2 border-t border-[#e8e7dd] space-y-3">
-                {/* Orientation */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-2">🔄 Orientation du cadre</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_orientation: 'vertical' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${(editingSection.custom_data?.frame_orientation || 'vertical') === 'vertical' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      ↕️ Vertical
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_orientation: 'horizontal' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.frame_orientation === 'horizontal' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      ↔️ Horizontal
-                    </button>
-                  </div>
-                </div>
-
-                {/* Taille */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-1">📏 Taille: {editingSection.custom_data?.frame_scale || 100}%</label>
-                  <input type="range" min="50" max="150" value={editingSection.custom_data?.frame_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_scale: parseInt(e.target.value) } })} className="w-full" />
-                </div>
-
-                {/* Position */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-2">📍 Position du cadre</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-[#6b6860]">Vertical: {editingSection.custom_data?.frame_pos_top || '50%'}</label>
-                      <input type="range" min="10" max="90" value={parseInt(editingSection.custom_data?.frame_pos_top) || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_pos_top: e.target.value + '%' } })} className="w-full" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#6b6860]">Horizontal: {editingSection.custom_data?.frame_pos_right || '5%'}</label>
-                      <input type="range" min="0" max="30" value={parseInt(editingSection.custom_data?.frame_pos_right) || 5} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_pos_right: e.target.value + '%' } })} className="w-full" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Épaisseur du cadre */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-1">🖼️ Épaisseur du cadre: {editingSection.custom_data?.frame_inset || '8'}%</label>
-                  <input type="range" min="3" max="20" value={parseInt(editingSection.custom_data?.frame_inset) || 8} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, frame_inset: e.target.value + '%' } })} className="w-full" />
-                  <p className="text-xs text-[#6b6860] mt-1">Ajuste pour que la photo remplisse la zone visible du cadre</p>
-                </div>
-
-                {/* Zoom de la photo */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-1">🔍 Zoom de la photo: {editingSection.custom_data?.photo_scale || 100}%</label>
-                  <input type="range" min="100" max="200" value={editingSection.custom_data?.photo_scale || 100} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_scale: parseInt(e.target.value) } })} className="w-full" />
-                  <p className="text-xs text-[#6b6860] mt-1">Agrandir pour remplir le cadre sans blancs</p>
-                </div>
-
-                {/* Position de la photo */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] font-medium mb-2">📷 Position de la photo (centrage)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-[#6b6860]">Horizontal: {editingSection.custom_data?.photo_pos_x || 50}%</label>
-                      <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_x || 50} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_x: parseInt(e.target.value) } })} className="w-full" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#6b6860]">Vertical: {editingSection.custom_data?.photo_pos_y || 20}%</label>
-                      <input type="range" min="0" max="100" value={editingSection.custom_data?.photo_pos_y || 20} onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, photo_pos_y: parseInt(e.target.value) } })} className="w-full" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-[#6b6860] mt-1">0% = gauche/haut, 50% = centre, 100% = droite/bas</p>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
