@@ -662,33 +662,53 @@ export default function VisualEditor() {
                   const file = e.target.files?.[0]
                   if (!file) return
                   
-                  // Lire les dimensions de l'image
-                  const img = new window.Image()
-                  img.src = URL.createObjectURL(file)
-                  await new Promise(resolve => img.onload = resolve)
-                  const imgWidth = img.naturalWidth
-                  const imgHeight = img.naturalHeight
-                  
-                  const fileExt = file.name.split('.').pop()
-                  const fileName = `portraits/${Date.now()}.${fileExt}`
-                  const { error } = await supabase.storage.from('artiste-images').upload(fileName, file)
-                  if (error) { alert('Erreur: ' + error.message); return }
-                  const { data: { publicUrl } } = supabase.storage.from('artiste-images').getPublicUrl(fileName)
+                  // Afficher le chargement
                   setEditingSection({ 
                     ...editingSection, 
-                    custom_data: { 
-                      ...editingSection.custom_data, 
-                      portrait_url: publicUrl,
-                      img_width: imgWidth,
-                      img_height: imgHeight
-                    }
+                    custom_data: { ...editingSection.custom_data, uploading: true }
                   })
+                  
+                  try {
+                    // Lire les dimensions de l'image
+                    const img = new window.Image()
+                    img.src = URL.createObjectURL(file)
+                    await new Promise(resolve => img.onload = resolve)
+                    const imgWidth = img.naturalWidth
+                    const imgHeight = img.naturalHeight
+                    
+                    const fileExt = file.name.split('.').pop()
+                    const fileName = `portraits/${Date.now()}.${fileExt}`
+                    const { error } = await supabase.storage.from('artiste-images').upload(fileName, file)
+                    if (error) { 
+                      alert('Erreur: ' + error.message)
+                      setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, uploading: false }})
+                      return 
+                    }
+                    const { data: { publicUrl } } = supabase.storage.from('artiste-images').getPublicUrl(fileName)
+                    setEditingSection({ 
+                      ...editingSection, 
+                      custom_data: { 
+                        ...editingSection.custom_data, 
+                        portrait_url: publicUrl,
+                        img_width: imgWidth,
+                        img_height: imgHeight,
+                        uploading: false
+                      }
+                    })
+                  } catch (err) {
+                    alert('Erreur lors de l\'upload')
+                    setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, uploading: false }})
+                  }
                 }}
                 className="text-xs text-[#6b6860]"
               />
             </div>
 
-            {editingSection.custom_data?.portrait_url && (
+            {editingSection.custom_data?.uploading && (
+              <p className="text-sm text-[#c9a050] animate-pulse">⏳ Upload en cours...</p>
+            )}
+
+            {editingSection.custom_data?.portrait_url && !editingSection.custom_data?.uploading && (
               <div className="space-y-3">
                 <div className="relative bg-gray-100 rounded overflow-hidden" style={{ 
                   width: editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '120px' : '80px',
