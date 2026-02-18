@@ -424,20 +424,30 @@ export default function Home() {
                       transform: 'translateY(-50%)',
                     }}
                   >
-                    <div 
-                      className="relative overflow-hidden shadow-2xl"
-                      style={{
-                        width: hero?.custom_data?.image_format === 'paysage' ? '480px' : '320px',
-                        height: hero?.custom_data?.image_format === 'paysage' ? '320px' : '420px',
-                      }}
-                    >
-                      <Image
-                        src={hero.custom_data.portrait_url}
-                        alt="Image de l'artiste"
-                        fill
-                        className="object-cover object-center"
-                      />
-                    </div>
+                    {(() => {
+                      const imgW = hero?.custom_data?.img_width || 300
+                      const imgH = hero?.custom_data?.img_height || 400
+                      const maxHeight = 420
+                      const ratio = imgW / imgH
+                      const displayHeight = Math.min(imgH, maxHeight)
+                      const displayWidth = displayHeight * ratio
+                      return (
+                        <div 
+                          className="relative overflow-hidden shadow-2xl"
+                          style={{
+                            width: `${displayWidth}px`,
+                            height: `${displayHeight}px`,
+                          }}
+                        >
+                          <Image
+                            src={hero.custom_data.portrait_url}
+                            alt="Image de l'artiste"
+                            fill
+                            className="object-cover object-center"
+                          />
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
               </div>

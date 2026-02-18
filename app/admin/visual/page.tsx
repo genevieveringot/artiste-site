@@ -648,19 +648,27 @@ export default function VisualEditor() {
           </div>
         )}
 
-        {/* Portrait de l'artiste (hero uniquement) */}
+        {/* Image de l'artiste (hero uniquement) */}
         {sectionType === 'hero' && (
           <div className="space-y-3 pt-2 border-t border-[#e8e7dd]">
-            <label className="block text-xs text-[#6b6860] font-medium">👤 Portrait de l'artiste (affiché à droite)</label>
+            <label className="block text-xs text-[#6b6860] font-medium">🖼️ Image (affichée à droite)</label>
             
             <div>
-              <label className="block text-xs text-[#6b6860] mb-1">Photo du portrait</label>
+              <label className="block text-xs text-[#6b6860] mb-1">Choisir une image</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (!file) return
+                  
+                  // Lire les dimensions de l'image
+                  const img = new window.Image()
+                  img.src = URL.createObjectURL(file)
+                  await new Promise(resolve => img.onload = resolve)
+                  const imgWidth = img.naturalWidth
+                  const imgHeight = img.naturalHeight
+                  
                   const fileExt = file.name.split('.').pop()
                   const fileName = `portraits/${Date.now()}.${fileExt}`
                   const { error } = await supabase.storage.from('artiste-images').upload(fileName, file)
@@ -668,7 +676,12 @@ export default function VisualEditor() {
                   const { data: { publicUrl } } = supabase.storage.from('artiste-images').getPublicUrl(fileName)
                   setEditingSection({ 
                     ...editingSection, 
-                    custom_data: { ...editingSection.custom_data, portrait_url: publicUrl }
+                    custom_data: { 
+                      ...editingSection.custom_data, 
+                      portrait_url: publicUrl,
+                      img_width: imgWidth,
+                      img_height: imgHeight
+                    }
                   })
                 }}
                 className="text-xs text-[#6b6860]"
@@ -677,32 +690,17 @@ export default function VisualEditor() {
 
             {editingSection.custom_data?.portrait_url && (
               <div className="space-y-3">
-                <div className="relative w-24 h-32 bg-gray-100 rounded overflow-hidden">
-                  <img src={editingSection.custom_data.portrait_url} alt="Portrait" className="w-full h-full object-cover" />
+                <div className="relative bg-gray-100 rounded overflow-hidden" style={{ 
+                  width: editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '120px' : '80px',
+                  height: editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '80px' : '120px'
+                }}>
+                  <img src={editingSection.custom_data.portrait_url} alt="Image" className="w-full h-full object-cover" />
                 </div>
-                
-                {/* Format de l'image */}
-                <div>
-                  <label className="block text-xs text-[#6b6860] mb-2">Format d'affichage</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, image_format: 'portrait' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${(editingSection.custom_data?.image_format || 'portrait') === 'portrait' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      📷 Portrait
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, image_format: 'paysage' } })}
-                      className={`flex-1 py-2 text-xs border rounded ${editingSection.custom_data?.image_format === 'paysage' ? 'border-[#c9a050] bg-[#c9a050]/10' : 'border-[#e8e7dd]'}`}
-                    >
-                      🖼️ Paysage
-                    </button>
-                  </div>
-                </div>
-                
-                <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_url: '' } })} className="text-xs text-red-500 hover:text-red-700">🗑️ Supprimer</button>
+                <p className="text-xs text-[#6b6860]">
+                  {editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '🖼️ Format paysage' : '📷 Format portrait'} 
+                  {editingSection.custom_data?.img_width && ` (${editingSection.custom_data.img_width}×${editingSection.custom_data.img_height})`}
+                </p>
+                <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_url: '', img_width: null, img_height: null } })} className="text-xs text-red-500 hover:text-red-700">🗑️ Supprimer</button>
               </div>
             )}
 
