@@ -408,7 +408,7 @@ export default function Home() {
                     </p>
                   )}
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cormorant_Garamond'] leading-tight mb-8" style={{ color: hero?.text_color || '#ffffff' }}>
-                    {(getLocalized(hero, 'title') || `Je suis ${settings?.artist_name || 'J. Wattebled'}, ${settings?.artist_title || 'peintre impressionniste'}`).split('|').map((line, i) => (
+                    {(getLocalized(hero, 'title') || `Je suis ${settings?.artist_name || 'J. Wattebled'}, ${settings?.artist_title || 'peintre impressionniste'}`).split('|').map((line: string, i: number) => (
                       <span key={i} className="block">{line.trim()}</span>
                     ))}
                   </h1>
