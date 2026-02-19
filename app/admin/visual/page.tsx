@@ -710,17 +710,29 @@ export default function VisualEditor() {
 
             {editingSection.custom_data?.portrait_url && !editingSection.custom_data?.uploading && (
               <div className="space-y-3">
-                <div className="relative bg-gray-100 rounded overflow-hidden" style={{ 
-                  width: editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '120px' : '80px',
-                  height: editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '80px' : '120px'
-                }}>
-                  <img src={editingSection.custom_data.portrait_url} alt="Image" className="w-full h-full object-cover" />
+                <div className="relative bg-gray-100 rounded overflow-hidden" style={{ width: '150px', height: '100px' }}>
+                  <img 
+                    src={editingSection.custom_data.portrait_url} 
+                    alt="Image" 
+                    className="w-full h-full object-cover"
+                    style={{ transform: `scale(${(editingSection.custom_data?.zoom || 100) / 100})` }}
+                  />
                 </div>
-                <p className="text-xs text-[#6b6860]">
-                  {editingSection.custom_data?.img_width > editingSection.custom_data?.img_height ? '🖼️ Format paysage' : '📷 Format portrait'} 
-                  {editingSection.custom_data?.img_width && ` (${editingSection.custom_data.img_width}×${editingSection.custom_data.img_height})`}
-                </p>
-                <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_url: '', img_width: null, img_height: null } })} className="text-xs text-red-500 hover:text-red-700">🗑️ Supprimer</button>
+                
+                <div>
+                  <label className="block text-xs text-[#6b6860] mb-1">🔍 Zoom : {editingSection.custom_data?.zoom || 100}%</label>
+                  <input 
+                    type="range" 
+                    min="100" 
+                    max="200" 
+                    value={editingSection.custom_data?.zoom || 100} 
+                    onChange={(e) => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, zoom: parseInt(e.target.value) } })} 
+                    className="w-full" 
+                  />
+                  <p className="text-xs text-[#6b6860] mt-1">Augmente le zoom pour masquer les bords blancs</p>
+                </div>
+                
+                <button type="button" onClick={() => setEditingSection({ ...editingSection, custom_data: { ...editingSection.custom_data, portrait_url: '', img_width: null, img_height: null, zoom: 100 } })} className="text-xs text-red-500 hover:text-red-700">🗑️ Supprimer</button>
               </div>
             )}
 

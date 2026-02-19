@@ -424,17 +424,22 @@ export default function Home() {
                       transform: 'translateY(-50%)',
                     }}
                   >
-                    <img
-                      src={hero.custom_data.portrait_url}
-                      alt="Image de l'artiste"
-                      className="shadow-2xl"
+                    <div 
+                      className="overflow-hidden shadow-2xl"
                       style={{
-                        maxHeight: '420px',
-                        maxWidth: '500px',
-                        width: 'auto',
-                        height: 'auto',
+                        width: '420px',
+                        height: '320px',
                       }}
-                    />
+                    >
+                      <img
+                        src={hero.custom_data.portrait_url}
+                        alt="Image de l'artiste"
+                        className="w-full h-full object-cover"
+                        style={{
+                          transform: `scale(${(hero?.custom_data?.zoom || 100) / 100})`,
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
