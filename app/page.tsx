@@ -113,6 +113,15 @@ export default function Home() {
   // Helper to get a section by key
   const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
 
+  // Helper to get localized content
+  const getLocalized = (section: PageSection | null | undefined, field: 'title' | 'subtitle' | 'description' | 'button_text') => {
+    if (!section) return ''
+    if (locale === 'en' && section.custom_data?.[`${field}_en`]) {
+      return section.custom_data[`${field}_en`]
+    }
+    return section[field] || ''
+  }
+
   // Scroll to section if hash in URL
   useEffect(() => {
     const hash = window.location.hash
@@ -393,23 +402,23 @@ export default function Home() {
             <div className="relative z-10 max-w-[1600px] mx-auto px-6 w-full">
               <div className="flex items-center justify-between">
                 <div className="max-w-2xl">
-                  {hero?.subtitle && (
+                  {getLocalized(hero, 'subtitle') && (
                     <p className="text-base md:text-lg font-['Cormorant_Garamond'] italic mb-4" style={{ color: hero?.accent_color || '#e8e7dd' }}>
-                      {hero.subtitle}
+                      {getLocalized(hero, 'subtitle')}
                     </p>
                   )}
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-['Cormorant_Garamond'] leading-tight mb-8" style={{ color: hero?.text_color || '#ffffff' }}>
-                    {(hero?.title || `Je suis ${settings?.artist_name || 'J. Wattebled'}, ${settings?.artist_title || 'peintre impressionniste'}`).split('|').map((line, i) => (
+                    {(getLocalized(hero, 'title') || `Je suis ${settings?.artist_name || 'J. Wattebled'}, ${settings?.artist_title || 'peintre impressionniste'}`).split('|').map((line, i) => (
                       <span key={i} className="block">{line.trim()}</span>
                     ))}
                   </h1>
-                  {hero?.button_text && (
+                  {(getLocalized(hero, 'button_text') || hero?.button_text) && (
                     <Link 
-                      href={hero.button_link || '/galerie'}
+                      href={hero?.button_link || '/galerie'}
                       className="inline-block px-10 py-4 text-sm tracking-wider hover:opacity-80 transition-colors"
                       style={{ backgroundColor: hero?.accent_color || '#e8e7dd', color: hero?.background_color || '#13130d' }}
                     >
-                      {hero.button_text}
+                      {getLocalized(hero, 'button_text') || hero?.button_text}
                     </Link>
                   )}
                 </div>
@@ -473,29 +482,29 @@ export default function Home() {
               <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
                 {/* Left - Content */}
                 <div className="order-2 md:order-1">
-                  {about.subtitle && (
+                  {getLocalized(about, 'subtitle') && (
                     <p 
                       className="text-xs tracking-[0.3em] uppercase mb-6"
                       style={{ color: about.text_color || '#13130d' }}
                     >
-                      {about.subtitle}
+                      {getLocalized(about, 'subtitle')}
                     </p>
                   )}
                   <h2 
                     className="text-4xl md:text-5xl lg:text-6xl font-['Cormorant_Garamond'] leading-tight mb-8"
                     style={{ color: about.text_color || '#13130d' }}
                   >
-                    {about.title || 'À propos de l\'artiste'}
+                    {getLocalized(about, 'title') || (locale === 'en' ? 'About the artist' : 'À propos de l\'artiste')}
                   </h2>
-                  {about.description && (
+                  {getLocalized(about, 'description') && (
                     <p 
                       className="text-lg leading-relaxed mb-10"
                       style={{ color: `${about.text_color || '#13130d'}99` }}
                     >
-                      {about.description}
+                      {getLocalized(about, 'description')}
                     </p>
                   )}
-                  {about.button_text && (
+                  {(getLocalized(about, 'button_text') || about.button_text) && (
                     <Link 
                       href={about.button_link || '/contact'}
                       className="inline-block px-10 py-5 text-sm tracking-wider transition-all hover:opacity-80"
@@ -505,7 +514,7 @@ export default function Home() {
                         borderRadius: '50px'
                       }}
                     >
-                      {about.button_text}
+                      {getLocalized(about, 'button_text') || about.button_text}
                     </Link>
                   )}
                 </div>

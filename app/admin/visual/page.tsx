@@ -454,6 +454,55 @@ export default function VisualEditor() {
           </div>
         </div>
 
+        {/* Traductions anglaises */}
+        <details className="border border-[#e8e7dd] rounded">
+          <summary className="px-3 py-2 bg-[#e8e7dd]/50 cursor-pointer text-sm font-medium flex items-center gap-2">
+            🇬🇧 English version (optionnel)
+          </summary>
+          <div className="p-3 space-y-3">
+            <div>
+              <label className="block text-xs text-[#6b6860] mb-1">Title (EN)</label>
+              <input
+                type="text"
+                value={getCustomField('title_en')}
+                onChange={(e) => updateCustomField('title_en', e.target.value)}
+                placeholder="English title..."
+                className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#6b6860] mb-1">Subtitle (EN)</label>
+              <input
+                type="text"
+                value={getCustomField('subtitle_en')}
+                onChange={(e) => updateCustomField('subtitle_en', e.target.value)}
+                placeholder="English subtitle..."
+                className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#6b6860] mb-1">Description (EN)</label>
+              <textarea
+                value={getCustomField('description_en')}
+                onChange={(e) => updateCustomField('description_en', e.target.value)}
+                placeholder="English description..."
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[#6b6860] mb-1">Button text (EN)</label>
+              <input
+                type="text"
+                value={getCustomField('button_text_en')}
+                onChange={(e) => updateCustomField('button_text_en', e.target.value)}
+                placeholder="English button text..."
+                className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none"
+              />
+            </div>
+          </div>
+        </details>
+
         {/* Éditeur FAQ spécifique */}
         {sectionType === 'faq' && (
           <div className="space-y-3 pt-2 border-t border-[#e8e7dd]">
