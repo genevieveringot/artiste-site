@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import { useI18n } from '@/lib/i18n/context'
+import { translateText } from '@/lib/i18n/translations'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 
@@ -48,6 +50,10 @@ export default function GaleriePage() {
   const [scrolled, setScrolled] = useState(false)
   
   const supabase = createClient()
+  const { locale } = useI18n()
+  
+  // Helper pour traduire
+  const t = (text: string | null | undefined) => translateText(text, locale)
 
   // Helper to get a section by key
   const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)

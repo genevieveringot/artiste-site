@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { useI18n } from '@/lib/i18n/context'
+import { translateText } from '@/lib/i18n/translations'
 
 interface ArtistSection {
   id: string
@@ -39,8 +41,12 @@ export default function ArtistePage() {
   const [loading, setLoading] = useState(true)
   
   const supabase = createClient()
+  const { locale } = useI18n()
 
   const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
+  
+  // Helper pour traduire
+  const t = (text: string | null | undefined) => translateText(text, locale)
 
   useEffect(() => {
     async function fetchData() {
@@ -76,8 +82,8 @@ export default function ArtistePage() {
       <Header 
         currentPage="artiste"
         backgroundImage={heroSection?.image_url || settings?.hero_image || "/hero.jpg"}
-        title={heroSection?.title || "L'artiste"}
-        breadcrumb="L'artiste"
+        title={t(heroSection?.title) || t("L'artiste")}
+        breadcrumb={t("L'artiste")}
       />
 
       {/* Section Bio principale */}
@@ -124,21 +130,21 @@ export default function ArtistePage() {
                   className="text-4xl md:text-5xl lg:text-6xl font-['Cormorant_Garamond'] mb-6"
                   style={{ color: bioSection.text_color || '#13130d' }}
                 >
-                  {bioSection.title || settings?.artist_name}
+                  {t(bioSection.title) || settings?.artist_name}
                 </h2>
                 {bioSection.subtitle && (
                   <p 
                     className="text-xl font-['Cormorant_Garamond'] italic mb-8"
                     style={{ color: bioSection.accent_color || '#c9a050' }}
                   >
-                    {bioSection.subtitle}
+                    {t(bioSection.subtitle)}
                   </p>
                 )}
                 {bioSection.description && (
                   <div 
                     className="prose prose-lg max-w-none rich-content"
                     style={{ color: `${bioSection.text_color || '#13130d'}cc` }}
-                    dangerouslySetInnerHTML={{ __html: bioSection.description }}
+                    dangerouslySetInnerHTML={{ __html: t(bioSection.description) }}
                   />
                 )}
                 {bioSection.button_text && (
@@ -150,7 +156,7 @@ export default function ArtistePage() {
                       color: '#fff' 
                     }}
                   >
-                    {bioSection.button_text}
+                    {t(bioSection.button_text)}
                   </Link>
                 )}
               </div>
