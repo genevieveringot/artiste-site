@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Footer from '@/components/Footer'
 import { useI18n } from '@/lib/i18n/context'
+import { translateText } from '@/lib/i18n/translations'
 import { useAuth } from '@/lib/auth/context'
 
 // Drapeaux SVG
@@ -113,13 +114,16 @@ export default function Home() {
   // Helper to get a section by key
   const getSection = (key: string) => sections.find(s => s.section_key === key && s.is_visible)
 
-  // Helper to get localized content
+  // Helper to get localized content with auto-translation
   const getLocalized = (section: PageSection | null | undefined, field: 'title' | 'subtitle' | 'description' | 'button_text') => {
     if (!section) return ''
+    // Si anglais et traduction manuelle existe, l'utiliser
     if (locale === 'en' && section.custom_data?.[`${field}_en`]) {
       return section.custom_data[`${field}_en`]
     }
-    return section[field] || ''
+    // Sinon, traduire automatiquement si en anglais
+    const frenchText = section[field] || ''
+    return translateText(frenchText, locale)
   }
 
   // Scroll to section if hash in URL

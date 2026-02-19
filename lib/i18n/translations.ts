@@ -121,3 +121,128 @@ export const translations = {
 
 export type Locale = 'fr' | 'en'
 export type TranslationKeys = typeof translations.fr
+
+// Dictionnaire de traduction automatique FR -> EN
+export const autoTranslate: Record<string, string> = {
+  // Titres courants
+  "À propos de l'artiste": "About the artist",
+  "À propos": "About",
+  "Bienvenue": "Welcome",
+  "Découvrir": "Discover",
+  "Découvrez": "Discover",
+  "Ma collection": "My collection",
+  "Mes œuvres": "My works",
+  "Mes tableaux": "My paintings",
+  "Collection": "Collection",
+  "Galerie": "Gallery",
+  "Contact": "Contact",
+  "Contactez-moi": "Contact me",
+  "Contactez-nous": "Contact us",
+  "Expositions": "Exhibitions",
+  "Récompenses": "Awards",
+  "Newsletter": "Newsletter",
+  "Boutique": "Shop",
+  "L'artiste": "The Artist",
+  "Artiste": "Artist",
+  
+  // Boutons
+  "Voir la galerie": "View gallery",
+  "VOIR LA GALERIE": "VIEW GALLERY",
+  "Voir plus": "See more",
+  "VOIR PLUS": "SEE MORE",
+  "Voir tout": "See all",
+  "VOIR TOUT": "SEE ALL",
+  "En savoir plus": "Learn more",
+  "EN SAVOIR PLUS": "LEARN MORE",
+  "Commander": "Order",
+  "COMMANDER": "ORDER",
+  "Acheter": "Buy",
+  "ACHETER": "BUY",
+  "Ajouter au panier": "Add to cart",
+  "AJOUTER AU PANIER": "ADD TO CART",
+  "S'inscrire": "Subscribe",
+  "S'INSCRIRE": "SUBSCRIBE",
+  "Envoyer": "Send",
+  "ENVOYER": "SEND",
+  "Soumettre": "Submit",
+  "DÉCOUVRIR": "DISCOVER",
+  "EXPLORER": "EXPLORE",
+  "ME CONTACTER": "CONTACT ME",
+  "NOUS CONTACTER": "CONTACT US",
+  
+  // Phrases courantes
+  "Artiste peintre": "Painter",
+  "artiste peintre": "painter",
+  "Peintre impressionniste": "Impressionist painter",
+  "peintre impressionniste": "impressionist painter",
+  "Nord de la France": "Northern France",
+  "Fait main": "Handmade",
+  "Œuvre originale": "Original artwork",
+  "Pièce unique": "Unique piece",
+  "Livraison gratuite": "Free shipping",
+  "Questions fréquentes": "Frequently asked questions",
+  "FAQ": "FAQ",
+  "Je suis": "I am",
+  "je suis": "I am",
+  
+  // Sections
+  "Biographie": "Biography",
+  "Mon parcours": "My journey",
+  "Mon histoire": "My story",
+  "Mes réalisations": "My achievements",
+  "Prix et distinctions": "Awards and honors",
+  "Horaires d'ouverture": "Opening hours",
+  "Nous contacter": "Contact us",
+  "Suivez-moi": "Follow me",
+  "Restez informé": "Stay informed",
+  "Inscrivez-vous à la newsletter": "Subscribe to the newsletter",
+  "Dernières œuvres": "Latest works",
+  "DERNIÈRES ŒUVRES": "LATEST WORKS",
+  "Nouvelles créations": "New creations",
+  "NOUVELLES CRÉATIONS": "NEW CREATIONS",
+  
+  // Descriptions courantes
+  "tableau": "painting",
+  "tableaux": "paintings",
+  "peinture": "painting",
+  "peintures": "paintings",
+  "huile sur toile": "oil on canvas",
+  "acrylique": "acrylic",
+  "aquarelle": "watercolor",
+  "paysage": "landscape",
+  "paysages": "landscapes",
+  "marine": "seascape",
+  "marines": "seascapes",
+  "portrait": "portrait",
+  "portraits": "portraits",
+  "nature morte": "still life",
+  "fleurs": "flowers",
+}
+
+// Fonction pour traduire automatiquement un texte FR -> EN
+export function translateText(text: string | null | undefined, locale: Locale): string {
+  if (!text) return ''
+  if (locale === 'fr') return text
+  
+  // Chercher une traduction exacte
+  if (autoTranslate[text]) {
+    return autoTranslate[text]
+  }
+  
+  // Chercher une traduction partielle (insensible à la casse)
+  const lowerText = text.toLowerCase()
+  for (const [fr, en] of Object.entries(autoTranslate)) {
+    if (lowerText === fr.toLowerCase()) {
+      return en
+    }
+  }
+  
+  // Remplacements partiels pour les phrases longues
+  let result = text
+  for (const [fr, en] of Object.entries(autoTranslate)) {
+    const regex = new RegExp(fr, 'gi')
+    result = result.replace(regex, en)
+  }
+  
+  return result
+}
