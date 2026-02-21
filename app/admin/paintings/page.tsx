@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import RichTextEditor from '@/components/RichTextEditor'
 
 interface Painting {
   id: string
@@ -309,11 +310,10 @@ export default function PaintingsAdmin() {
 
               <div>
                 <label className="block text-sm text-[var(--text-muted)] mb-2">Description</label>
-                <textarea
+                <RichTextEditor
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-white border border-[var(--border)] text-[#13130d] focus:border-[var(--accent)] focus:outline-none resize-none"
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  placeholder="Description du tableau..."
                 />
               </div>
 
