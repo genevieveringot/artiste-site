@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import RichTextEditor from '@/components/RichTextEditor'
 
 interface FaqItem {
   q: string
@@ -445,11 +446,10 @@ export default function VisualEditor() {
 
           <div>
             <label className="block text-xs text-[#6b6860] mb-1">Description</label>
-            <textarea
+            <RichTextEditor
               value={editingSection.description || ''}
-              onChange={(e) => setEditingSection({ ...editingSection, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none resize-none"
+              onChange={(value) => setEditingSection({ ...editingSection, description: value })}
+              placeholder="Description de la section..."
             />
           </div>
         </div>
@@ -482,12 +482,10 @@ export default function VisualEditor() {
             </div>
             <div>
               <label className="block text-xs text-[#6b6860] mb-1">Description (EN)</label>
-              <textarea
+              <RichTextEditor
                 value={getCustomField('description_en')}
-                onChange={(e) => updateCustomField('description_en', e.target.value)}
+                onChange={(value) => updateCustomField('description_en', value)}
                 placeholder="English description..."
-                rows={3}
-                className="w-full px-3 py-2 text-sm border border-[#e8e7dd] text-[#13130d] focus:border-[#c9a050] focus:outline-none resize-none"
               />
             </div>
             <div>
